@@ -1,0 +1,2161 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#04192C">
+<title>Contrôle de sécurité</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Karla:wght@400;500;700&display=swap">
+<style>
+/* Layout: one phone-width column (under a dashed test bar with ?test); each level is a screen swapped in place.
+   Palette and faces come from the Réveillon site (night navy, lighthouse gold, pink granite). */
+:root{
+  color-scheme:dark;
+  --abysse:#04192C; --nuit:#0A2B48; --nuit-2:#0E3557; --ardoise:#1B4A70; --field:#08263F;
+  --ecume:#F4F8FB; --ecume-2:#E1E9F0; --brume:#9FBFDA; --brume-faible:#6E90AC;
+  --encre:#0A2B48; --encre-douce:#4D6A84; --lien:#1F5FA6;
+  --or:#F2A03D; --soleil:#FFC65C; --or-ink:#2B1500;
+  --granit:#DE9C93; --granit-mid:#B97A72; --granit-sombre:#8E5A55;
+  --algue:#5FB49C; --algue-ink:#03241A; --corail:#DC5044; --corail-txt:#F08578;
+  --fog:#051B30; --sentier:#17405F; --sentier-dim:#0C2A45;
+  --surligne:#FFE3AE; --ok-bg:#CFEBDF;
+  --tb-bg:rgba(4,25,44,.94);
+  --display:"Fraunces",Georgia,"Times New Roman",serif;
+  --body:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:14px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{overflow-x:hidden}
+body{margin:0;background:var(--abysse);color:var(--ecume);font:400 1rem/1.55 var(--body);-webkit-font-smoothing:antialiased;padding-inline:16px;padding-block:0 56px}
+h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.12;text-wrap:balance;margin:0;font-optical-sizing:auto}
+h1{font-size:clamp(2rem,7.5vw,2.5rem)}
+h2{font-size:clamp(1.55rem,5.6vw,1.95rem)}
+h3{font-size:1.25rem}
+p{margin:0}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--soleil);outline-offset:2px;border-radius:6px}
+h1:focus,h2:focus{outline:none}
+.visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- test bar ---------- */
+.testbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;margin-inline:-16px;padding:8px 16px;background:var(--tb-bg);border-bottom:1px dashed var(--brume-faible);font:500 .75rem/1.3 var(--mono);color:var(--brume);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.tb-row{display:flex;align-items:center;gap:8px;max-width:30rem;margin:0 auto}
+.tb-tag{flex:none;text-transform:uppercase;letter-spacing:.12em;color:var(--soleil)}
+.tb-nav{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
+.tb-nav::-webkit-scrollbar{display:none}
+.tb-btn{font:inherit;color:var(--brume);background:transparent;border:1px solid var(--ardoise);border-radius:999px;padding:4px 9px;white-space:nowrap;cursor:pointer}
+.tb-btn:hover{border-color:var(--brume-faible);color:var(--ecume)}
+.tb-nav .tb-btn[aria-current="step"]{background:var(--brume);color:var(--abysse);border-color:var(--brume)}
+.tb-more{flex:none}
+.tb-panel{max-width:30rem;margin:10px auto 2px;display:grid;gap:10px}
+.tb-panel label{display:grid;gap:4px}
+.tb-panel input,.tb-panel select{font:inherit;color:var(--ecume);background:var(--field);border:1px solid var(--ardoise);border-radius:8px;padding:7px 8px;width:100%}
+.tb-line{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.tb-line b{color:var(--soleil);font-weight:600}
+
+/* ---------- frame ---------- */
+.app{max-width:30rem;margin:0 auto;padding-top:20px;display:grid;gap:22px;overflow-x:clip}
+.progress{display:grid;gap:8px}
+.progress-label{font:500 .75rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--brume)}
+.progress.over .progress-label{color:var(--corail-txt)}
+.progress ol{list-style:none;margin:0;padding:0;display:flex;gap:6px}
+.progress li{flex:1;height:4px;border-radius:2px;background:var(--ardoise)}
+.progress li.done{background:var(--algue)}
+.progress li.cur{background:var(--or)}
+.progress li.extra{background:repeating-linear-gradient(90deg,var(--corail) 0 6px,transparent 6px 10px)}
+.progress li.extra.done{background:repeating-linear-gradient(90deg,var(--algue) 0 6px,transparent 6px 10px)}
+.screen{display:grid;gap:18px;position:relative}
+.lvl-head{display:grid;gap:8px}
+.eyebrow{font:500 .75rem/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--or)}
+.lvl-head p:not(.eyebrow),.lede{color:var(--brume);max-width:62ch}
+.fine{font-size:.85rem;color:var(--brume-faible)}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:.75rem 1.15rem;border-radius:12px;border:1.5px solid transparent;font:700 1rem/1.2 var(--body);cursor:pointer;text-align:center;transition:background .15s,border-color .15s,transform .1s}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-or{background:var(--or);color:var(--or-ink)}
+.btn-or:hover:not(:disabled){background:var(--soleil)}
+.btn-ghost{background:transparent;color:var(--ecume);border-color:var(--ardoise)}
+.btn-ghost:hover{border-color:var(--brume-faible)}
+.btn-ko{background:transparent;color:var(--corail-txt);border-color:var(--corail)}
+.btn-ko:hover{background:rgba(220,80,68,.12)}
+.btn-ok{background:var(--algue);color:var(--algue-ink)}
+.btn-ok:hover{filter:brightness(1.08)}
+.btn-wide{width:100%}
+.linklike{background:none;border:0;padding:0;color:var(--soleil);text-decoration:underline;text-underline-offset:2px;cursor:pointer;font:inherit}
+
+/* the seagull agent */
+.agent{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:end}
+.agent svg{width:52px;height:52px}
+.bubble{background:var(--nuit);border:1px solid var(--ardoise);border-radius:14px 14px 14px 4px;padding:11px 14px;font-size:.95rem;color:var(--ecume)}
+.bubble .who{display:block;font:500 .68rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--brume-faible);margin-bottom:2px}
+.bubble.talk{animation:talk .28s ease-out}
+@keyframes talk{from{transform:translateY(4px);opacity:.4}to{transform:none;opacity:1}}
+
+.result{display:grid;gap:10px;padding:16px;border-radius:var(--r);background:var(--nuit);border:1px solid var(--ardoise)}
+.result.is-ok h3{color:var(--algue)}
+.result.is-ko h3{color:var(--corail-txt)}
+.result p{color:var(--brume)}
+
+/* ---------- intro ---------- */
+.alert-eyebrow{display:flex;align-items:center;gap:10px;font:500 .75rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--corail-txt)}
+.voyant{width:10px;height:10px;border-radius:50%;background:var(--corail);box-shadow:0 0 0 0 rgba(220,80,68,.6);animation:voyant 1.4s ease-out infinite}
+@keyframes voyant{0%{box-shadow:0 0 0 0 rgba(220,80,68,.6)}100%{box-shadow:0 0 0 14px rgba(220,80,68,0)}}
+.intro-hero{display:flex;align-items:flex-end;gap:14px}
+.intro-hero svg{width:120px;height:120px;flex:none}
+.tampon{font:600 .8rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--corail-txt);border:2px solid var(--corail);border-radius:6px;padding:6px 10px;transform:rotate(-7deg);margin-bottom:22px}
+.scan{list-style:none;margin:0;padding:12px 14px;display:grid;gap:6px;border-radius:var(--r);background:var(--field);border:1px solid var(--ardoise);font:400 .85rem/1.4 var(--mono)}
+.scan li{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;animation:scanin .35s ease-out backwards}
+.scan li:nth-child(2){animation-delay:.25s}.scan li:nth-child(3){animation-delay:.5s}.scan li:nth-child(4){animation-delay:.75s}
+@keyframes scanin{from{opacity:0;transform:translateX(-6px)}}
+.scan span{color:var(--brume)}
+.scan b{font-weight:600}
+.c-ok{color:var(--algue)}.c-warn{color:var(--soleil)}.c-ko{color:var(--corail-txt)}
+
+/* ---------- 1 · phishing catch ---------- */
+.filet{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.filet-fish{display:flex;gap:4px}
+.fish svg{width:24px;height:14px;display:block}
+.fish path{fill:var(--ardoise)}
+.fish circle{fill:var(--abysse)}
+.fish.is-ok path{fill:var(--algue)}
+.fish.is-ko path{fill:var(--corail)}
+.filet-n{font:500 .8rem var(--mono);color:var(--brume);font-variant-numeric:tabular-nums}
+.stack{display:grid;min-height:15rem}
+.msg{grid-area:1/1;position:relative;background:var(--ecume);color:var(--encre);border-radius:16px;padding:16px 16px 18px;display:grid;gap:6px;align-content:start;box-shadow:0 12px 30px rgba(0,0,0,.35);touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab;will-change:transform}
+.msg.dragging{cursor:grabbing}
+.msg.decided{pointer-events:none;transition:transform .22s ease-out,box-shadow .2s}
+.msg.decided.is-ok{box-shadow:0 0 0 3px var(--algue),0 12px 30px rgba(0,0,0,.35)}
+.msg.decided.is-ko{box-shadow:0 0 0 3px var(--corail),0 12px 30px rgba(0,0,0,.35)}
+.msg.flying{transition:transform .32s ease-in,opacity .32s ease-in}
+.msg-cur{animation:rise .22s ease-out}
+@keyframes rise{from{transform:scale(.96) translateY(8px)}}
+.msg-next{transform:scale(.95) translateY(12px);opacity:.55;pointer-events:none;box-shadow:none}
+.msg-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.canal{font:600 .66rem var(--mono);letter-spacing:.1em;text-transform:uppercase;background:var(--ecume-2);color:var(--encre-douce);padding:3px 7px;border-radius:5px}
+.msg-de{font-weight:700}
+.msg-adr{font-size:.82rem;color:var(--encre-douce);overflow-wrap:anywhere}
+.msg-objet{font-weight:700;margin-top:4px}
+.msg-corps{font-size:.97rem}
+.msg-lien{font:500 .8rem/1.4 var(--mono);color:var(--lien);text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere;margin-top:2px}
+.msg-pj{display:inline-flex;align-items:center;gap:6px;justify-self:start;font:500 .8rem var(--mono);background:var(--ecume-2);border-radius:8px;padding:6px 9px;margin-top:2px;overflow-wrap:anywhere}
+.msg-pj svg{width:14px;height:14px;flex:none}
+.stamp{position:absolute;top:14px;font:600 .8rem var(--mono);letter-spacing:.14em;text-transform:uppercase;border:2px solid;border-radius:6px;padding:4px 8px;opacity:0;pointer-events:none;background:var(--ecume)}
+.stamp-ko{right:14px;color:var(--corail);transform:rotate(9deg)}
+.stamp-ok{left:14px;color:#2E8A70;transform:rotate(-9deg)}
+.peche-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.verdict{display:grid;gap:8px;padding:14px 16px;border-radius:var(--r);background:var(--nuit);border:1px solid var(--ardoise)}
+.verdict-title{font-weight:700}
+.verdict.is-ok .verdict-title{color:var(--algue)}
+.verdict.is-ko .verdict-title{color:var(--corail-txt)}
+.verdict-why{color:var(--brume)}
+.verdict-why b{color:var(--ecume)}
+.verdict .btn{justify-self:start;margin-top:4px}
+
+/* ---------- 2 · lighthouse ---------- */
+.scene{position:relative;aspect-ratio:360/230;max-width:100%;border-radius:var(--r);overflow:hidden;background:linear-gradient(180deg,#020F1C 0%,var(--abysse) 45%,var(--nuit) 100%);border:1px solid var(--ardoise)}
+.scene canvas,.scene svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.st-sun{stop-color:var(--soleil)}
+.sky-wash{fill:var(--soleil);opacity:0;transition:opacity 70ms}
+.scene.on .sky-wash{opacity:.08}
+.beam,.halo{opacity:0;transition:opacity 70ms}
+.scene.on .beam,.scene.on .halo,.scene.ok .beam,.scene.ok .halo{opacity:1}
+.scene.ok .beam{animation:beam 2.6s ease-in-out infinite alternate}
+@keyframes beam{from{opacity:.55}to{opacity:1}}
+.lamp{fill:var(--brume-faible);transition:fill 70ms}
+.scene.on .lamp,.scene.ok .lamp{fill:var(--soleil)}
+.stars circle{fill:var(--ecume);opacity:.55}
+.sea{fill:var(--nuit)}
+.wave{stroke:var(--ardoise);fill:none;stroke-width:1.3;stroke-linecap:round}
+.tower{fill:var(--granit)}
+.masonry{stroke:var(--granit-sombre);stroke-width:.8;fill:none;opacity:.65}
+.door,.window{fill:var(--nuit)}
+.gallery{fill:var(--granit-sombre)}
+.rail{stroke:var(--brume-faible);stroke-width:1;fill:none}
+.lantern{fill:var(--nuit-2);stroke:var(--ardoise);stroke-width:1.2}
+.mullion{stroke:var(--ardoise);stroke-width:1.2}
+.cap{fill:var(--ardoise)}
+.finial{stroke:var(--ardoise);stroke-width:2;stroke-linecap:round}
+.rock-back{fill:var(--granit-sombre)}
+.rock{fill:var(--granit-mid)}
+.rock-2{fill:var(--granit-sombre)}
+.rock-3{fill:var(--granit)}
+.phare-status{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font:500 .85rem var(--mono);color:var(--brume)}
+.countdown{font-variant-numeric:tabular-nums;background:var(--nuit);border:1px solid var(--ardoise);border-radius:999px;padding:3px 10px;color:var(--ecume)}
+.countdown.urgent{color:var(--corail-txt);border-color:var(--corail)}
+.tally{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tally-slot{display:flex;flex-wrap:wrap;gap:4px;align-content:center;justify-content:center;min-height:30px;padding:6px;border-radius:8px;border:1px dashed var(--ardoise)}
+.tally-slot.cur{border-color:var(--or)}
+.tally-slot i{width:7px;height:7px;border-radius:50%;background:var(--soleil)}
+.otp{display:flex;gap:10px;justify-content:center}
+.otp input{width:3.3rem;height:3.9rem;text-align:center;font:600 1.75rem var(--mono);color:var(--ecume);background:var(--field);border:1.5px solid var(--ardoise);border-radius:12px;caret-color:var(--soleil)}
+.otp input:focus{outline:none;border-color:var(--or)}
+.otp input:disabled{opacity:.5}
+.otp.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+.form-msg{min-height:1.4em;font-size:.95rem;color:var(--brume)}
+.form-msg.err{color:var(--corail-txt)}
+.form-msg.ok{color:var(--algue)}
+
+/* ---------- 3 · radome password ---------- */
+.radome-wrap{display:grid;justify-items:center;gap:4px}
+.radome-wrap svg{width:min(100%,300px);height:auto;display:block}
+.radome-n{font:500 .8rem var(--mono);color:var(--brume);font-variant-numeric:tabular-nums}
+.pan{fill:var(--nuit-2);stroke:var(--brume-faible);stroke-width:1;stroke-linejoin:round;transition:fill .3s}
+.pan.lit{fill:var(--or)}
+.pan-static{fill:var(--nuit);stroke:var(--ardoise);stroke-width:1;stroke-linejoin:round}
+.dome-edge{fill:none;stroke:var(--brume-faible);stroke-width:1.5}
+.dome-base{fill:var(--ardoise)}
+.dome-door{fill:var(--abysse)}
+.signal{fill:none;stroke:var(--or);stroke-width:2.5;stroke-linecap:round;opacity:0}
+#radomeSvg.all .signal{animation:signal 1.6s ease-out infinite}
+#radomeSvg.all .signal:nth-of-type(2){animation-delay:.25s}
+#radomeSvg.all .signal:nth-of-type(3){animation-delay:.5s}
+@keyframes signal{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+.field-label{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-weight:700}
+.field-label span{font:500 .8rem var(--mono);color:var(--brume);font-variant-numeric:tabular-nums}
+.pwd{width:100%;font:500 1.1rem var(--mono);color:var(--ecume);background:var(--field);border:1.5px solid var(--ardoise);border-radius:12px;padding:.85rem 1rem}
+.pwd:focus{outline:none;border-color:var(--or)}
+.pwd:disabled{opacity:.6}
+.pwd-group{display:grid;gap:8px}
+.rules{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.rule{display:grid;grid-template-columns:22px minmax(0,1fr);gap:4px 10px;padding:10px 12px;border-radius:12px;border:1px solid var(--ardoise);background:var(--nuit)}
+.rule.ko{border-color:rgba(220,80,68,.55);background:rgba(220,80,68,.08)}
+.rule.new{animation:rulein .3s ease-out}
+@keyframes rulein{from{opacity:0;transform:translateY(-6px)}}
+.rule-n{grid-column:2;font:500 .68rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--brume-faible)}
+.rule-ico{grid-row:1/span 2;align-self:center;width:22px;height:22px}
+.rule.ok .rule-ico{color:var(--algue)}
+.rule.ko .rule-ico{color:var(--corail-txt)}
+.rule-txt{grid-column:2;min-width:0}
+.chip{display:inline-flex;align-items:center;margin-left:6px;font:600 .8rem var(--body);color:var(--ecume);background:var(--nuit-2);border:1px solid var(--ardoise);border-radius:999px;padding:2px 9px;cursor:pointer;vertical-align:1px}
+.chip:hover{border-color:var(--brume-faible)}
+.confirm{display:grid;gap:8px;padding:14px;border-radius:var(--r);background:var(--nuit);border:1px dashed var(--or)}
+.confirm .chip{margin-left:0;justify-self:start;min-height:34px;padding:4px 14px;font-size:.88rem}
+.chip:disabled{opacity:.5;cursor:default}
+
+/* ---------- 4 · sudoku ---------- */
+.sdk{display:grid;grid-template-columns:repeat(9,1fr);width:min(100%,24rem);justify-self:center;border:2px solid var(--brume);border-radius:10px;overflow:hidden;background:var(--field)}
+.sdk button{aspect-ratio:1;min-width:0;padding:0;border:0;border-right:1px solid var(--ardoise);border-bottom:1px solid var(--ardoise);background:transparent;color:var(--soleil);font:600 clamp(1rem,4.6vw,1.3rem)/1 var(--mono);cursor:pointer}
+.sdk button.giv{color:var(--ecume);cursor:default}
+.sdk button.bc{border-right:2px solid var(--brume)}
+.sdk button.br{border-bottom:2px solid var(--brume)}
+.sdk button.lc{border-right:0}
+.sdk button.lr{border-bottom:0}
+.sdk button.peer{background:rgba(159,191,218,.08)}
+.sdk button.sel{background:rgba(242,160,61,.28)}
+.sdk button.bad{color:var(--corail-txt)}
+.sdk button:focus-visible{outline-offset:-3px;border-radius:0}
+.keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:min(100%,24rem);justify-self:center}
+.keypad button{min-height:46px;border-radius:10px;background:var(--nuit-2);border:1px solid var(--ardoise);color:var(--ecume);font:600 1.1rem var(--mono);cursor:pointer}
+.keypad button:active{background:var(--ardoise)}
+.keypad .kp-erase{font:700 .8rem var(--body)}
+
+/* ---------- 5 · crossword ---------- */
+.cw-cluebar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline;padding:10px 14px;border-radius:12px;background:var(--nuit);border:1px solid var(--or);position:sticky;top:calc(env(safe-area-inset-top,0px) + 46px);z-index:5}
+.cw-cluebar b{font:600 .85rem var(--mono);color:var(--or);white-space:nowrap}
+.cw{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;width:min(100%,22rem);justify-self:center}
+.cw-cell{position:relative;aspect-ratio:1;min-width:0}
+.cw-cell input{width:100%;height:100%;padding:0;border:1.5px solid var(--brume-faible);border-radius:6px;background:var(--ecume);color:var(--encre);text-align:center;font:700 clamp(1.1rem,5vw,1.45rem)/1 var(--mono);text-transform:uppercase;caret-color:transparent}
+.cw-cell input:focus{outline:none;border-color:var(--or);box-shadow:0 0 0 2px var(--or)}
+.cw-cell.on input{background:var(--surligne)}
+.cw-cell.ok input{background:var(--ok-bg);border-color:var(--algue)}
+.cw-n{position:absolute;top:2px;left:4px;z-index:1;font:600 .58rem/1 var(--mono);color:var(--encre-douce);pointer-events:none}
+.clues{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.clue{width:100%;display:grid;grid-template-columns:2.6rem minmax(0,1fr);gap:8px;align-items:baseline;padding:9px 12px;border-radius:10px;border:1px solid var(--ardoise);background:var(--nuit);color:var(--ecume);font:inherit;font-size:.95rem;text-align:left;cursor:pointer}
+.clue-n{font:600 .8rem var(--mono);color:var(--brume)}
+.clue.on{border-color:var(--or)}
+.clue.ok{color:var(--brume-faible)}
+.clue.ok .clue-n{color:var(--algue)}
+.phrase{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 14px;padding:12px;border-radius:var(--r);background:var(--field);border:1px dashed var(--ardoise)}
+.phrase-w{display:flex;gap:3px;align-items:end}
+.phrase-w span{display:inline-grid;place-items:end center;width:1.15em;height:1.6em;font:600 1.05rem var(--mono);color:var(--soleil);border-bottom:2px solid var(--brume-faible)}
+.phrase-w span.apo{width:.4em;border:0;color:var(--brume)}
+.phrase-w.ok span{border-color:var(--or)}
+.phrase-big{font-family:var(--display);font-weight:700;font-size:clamp(1.5rem,6.5vw,2rem);line-height:1.15;color:var(--soleil);text-wrap:balance}
+
+/* ---------- 6 · pop-up storm ---------- */
+.storm-hud{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+.hud-item{display:grid;gap:2px}
+.hud-item span{font:500 .68rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--brume-faible)}
+.hud-item b{font:600 1.35rem/1.1 var(--display);font-variant-numeric:tabular-nums}
+.hud-open{justify-items:end}
+.storm-dots{display:flex;gap:4px}
+.storm-dots i{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--brume-faible)}
+.storm-dots i.on{background:var(--corail);border-color:var(--corail)}
+.storm-bar{height:6px;border-radius:3px;background:var(--ardoise);overflow:hidden}
+.storm-bar i{display:block;height:100%;background:var(--or);transform-origin:left center}
+.storm{position:relative;aspect-ratio:4/5;max-width:100%;border-radius:var(--r);overflow:hidden;border:1px solid var(--ardoise);touch-action:manipulation;-webkit-user-select:none;user-select:none;background:repeating-linear-gradient(135deg,rgba(159,191,218,.035) 0 12px,transparent 12px 24px),linear-gradient(180deg,var(--nuit) 0%,var(--abysse) 100%)}
+.storm.shake{animation:shake .35s}
+.storm.sunk::after{content:"Coulé";position:absolute;inset:0;z-index:900;display:grid;place-items:center;background:rgba(4,25,44,.6);font:700 2.4rem var(--display);color:var(--corail-txt);letter-spacing:.04em}
+.storm-idle{position:absolute;inset:0;z-index:950;display:grid;place-content:center;justify-items:center;gap:14px;padding:24px;text-align:center;color:var(--brume)}
+.storm-count{position:absolute;inset:0;z-index:950;display:grid;place-items:center;font:700 5.5rem/1 var(--display);color:var(--soleil)}
+.pop{--pc:var(--or);--pci:var(--or-ink);position:absolute;background:var(--ecume);color:var(--encre);border-radius:10px;box-shadow:0 10px 24px rgba(0,0,0,.45);overflow:hidden;animation:popin .14s ease-out}
+.pop.pc-co{--pc:var(--corail);--pci:var(--ecume)}
+.pop.pc-ar{--pc:var(--ardoise);--pci:var(--ecume)}
+.pop.pc-al{--pc:var(--algue);--pci:var(--algue-ink)}
+@keyframes popin{from{transform:scale(.86);opacity:0}}
+.pop.closing{animation:popout .12s ease-in forwards;pointer-events:none}
+@keyframes popout{to{transform:scale(.86);opacity:0}}
+.pop-bar{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:34px;padding-left:10px;background:var(--pc);color:var(--pci);font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.pop-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pop-x{flex:none;width:38px;height:34px;display:grid;place-items:center;border:0;background:transparent;color:inherit;font:700 1.2rem/1 var(--body);cursor:pointer}
+.pop.fled .pop-bar{flex-direction:row-reverse;padding-left:0;padding-right:10px}
+.pop-body{display:grid;gap:10px;padding:10px 12px 12px}
+.pop-msg{font-size:.86rem;line-height:1.35}
+.pop-trap{min-height:40px;border:0;border-radius:8px;background:var(--corail);color:var(--ecume);font:700 .9rem var(--body);cursor:pointer}
+
+/* ---------- maze (not in the sequence) ---------- */
+.maze-wrap{display:grid;justify-items:center;padding:10px 6px;border-radius:var(--r);background:var(--field);border:1px solid var(--ardoise)}
+#maze{display:block;touch-action:none;max-width:100%}
+#maze:focus-visible{outline-offset:5px}
+.legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 14px;font:500 .75rem var(--mono);color:var(--brume)}
+.legend li{display:flex;align-items:center;gap:6px}
+.lg{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font:700 .7rem var(--mono)}
+.lg-exit{background:var(--or)}
+.lg-door{border:1.5px solid var(--brume);color:var(--brume);background:var(--nuit-2)}
+.lg-gate{border-radius:3px;border:2px solid var(--or);border-bottom:0;width:16px;height:12px}
+.lg-me{background:var(--soleil);width:14px;height:14px;box-shadow:0 0 0 2px var(--abysse)}
+.maze-bottom{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.dpad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:4px}
+.dpad button{display:grid;place-items:center;border-radius:12px;background:var(--nuit-2);border:1px solid var(--ardoise);color:var(--ecume);cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
+.dpad button:active{background:var(--ardoise)}
+.dpad svg{width:20px;height:20px}
+.dpad .up{grid-area:1/2}.dpad .left{grid-area:2/1}.dpad .right{grid-area:2/3}.dpad .down{grid-area:3/2}
+.dpad .mid{grid-area:2/2;display:grid;place-items:center;font:500 .62rem/1.2 var(--mono);color:var(--brume-faible);text-align:center;text-transform:uppercase;letter-spacing:.06em}
+.dpad .mid b{display:block;font-size:1rem;color:var(--ecume);font-variant-numeric:tabular-nums}
+.maze-help{display:grid;gap:8px;min-width:0}
+
+/* ---------- end screen ---------- */
+.fin-fx{position:absolute;inset:-20px -16px auto;height:420px;width:calc(100% + 32px);pointer-events:none;z-index:2}
+.badge{width:min(62vw,220px);height:auto;justify-self:center;display:block;filter:drop-shadow(0 10px 30px rgba(242,160,61,.25))}
+.badge-ring{fill:var(--or)}
+.badge-dash{fill:none;stroke:var(--or-ink);stroke-width:1.5;stroke-dasharray:2 4}
+.badge-core{fill:var(--nuit)}
+.badge-txt{fill:var(--or-ink);font:600 11.5px var(--mono);letter-spacing:1px}
+.fin-head{display:grid;gap:10px;text-align:center;justify-items:center}
+.fin-head p{color:var(--brume);max-width:34ch}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:0;border-radius:var(--r);overflow:hidden;background:var(--ardoise);border:1px solid var(--ardoise)}
+.stats div{background:var(--nuit);padding:12px 14px;display:grid;gap:2px}
+.stats dt{font:500 .68rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--brume-faible)}
+.stats dd{margin:0;font:600 1.35rem var(--display);font-variant-numeric:tabular-nums}
+
+/* ---------- overlays ---------- */
+.glitch{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:24px 16px;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),rgba(2,12,22,.94)}
+.glitch-box{max-width:26rem;width:100%;display:grid;gap:14px;text-align:center;justify-items:center}
+.glitch-code{font:600 clamp(1.5rem,7vw,2.1rem)/1.1 var(--mono);letter-spacing:.06em;color:var(--corail-txt);text-shadow:2px 0 var(--algue),-2px 0 var(--corail)}
+.glitch.play .glitch-code{animation:jitter .5s steps(2) 3}
+@keyframes jitter{0%{transform:translate(0)}25%{transform:translate(-3px,1px) skewX(-6deg)}50%{transform:translate(3px,-1px)}75%{transform:translate(-1px,2px) skewX(4deg)}100%{transform:none}}
+.glitch-msg{color:var(--ecume);font-size:1.05rem;max-width:36ch}
+.glitch-msg b{color:var(--soleil);letter-spacing:.02em}
+.glitch-goeland{width:96px;height:96px}
+.glitch.is-goeland .glitch-code{color:var(--soleil);text-shadow:none;animation:none}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:60;max-width:calc(100% - 32px);background:var(--ecume);color:var(--encre);font-weight:700;padding:10px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:380px){
+  .peche-actions{grid-template-columns:1fr}
+  .maze-bottom{grid-template-columns:1fr;justify-items:center}
+  .otp input{width:2.9rem;height:3.5rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- Seagull agent, an original drawing reused everywhere -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="goeland" viewBox="0 0 120 120">
+    <ellipse cx="62" cy="113" rx="30" ry="4" fill="#000000" opacity=".28"/>
+    <path d="M55 99 L53 111 M68 99 L70 111" stroke="#E79A6F" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M92 74 L114 66 L108 84 Z" fill="#A9BACB"/>
+    <path d="M105 69.5 L114 66 L111.5 76 Z" fill="#0A2B48"/>
+    <ellipse cx="64" cy="80" rx="34" ry="24" fill="#F4F8FB"/>
+    <path d="M42 70 Q72 54 102 72 Q84 92 52 88 Z" fill="#A9BACB"/>
+    <path d="M60 75 Q76 70 92 77" stroke="#8597AA" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <circle cx="40" cy="50" r="18" fill="#F4F8FB"/>
+    <circle cx="35" cy="49.5" r="2.6" fill="#04192C"/>
+    <path d="M24 52 L5 56 L24 59 Z" fill="#FFC65C"/>
+    <circle cx="11.5" cy="57" r="1.8" fill="#DC5044"/>
+    <path d="M24 41 Q38 24 56 36 L57 41 Z" fill="#0A2B48"/>
+    <path d="M10 42.5 Q22 38.5 35 40 L35 44 Q22 43 10 45.5 Z" fill="#1B4A70"/>
+    <circle cx="44" cy="34.5" r="3.2" fill="#F2A03D"/>
+  </symbol>
+</svg>
+
+<!-- ============ TEST BAR: only shown with goeland.html?test ============ -->
+<div class="testbar" id="testbar" hidden>
+  <div class="tb-row">
+    <span class="tb-tag">Test</span>
+    <nav class="tb-nav" aria-label="Aller à une étape">
+      <button class="tb-btn" type="button" data-go="intro">Intro</button>
+      <button class="tb-btn" type="button" data-go="peche">1 Pêche</button>
+      <button class="tb-btn" type="button" data-go="phare">2 Phare</button>
+      <button class="tb-btn" type="button" data-go="radome">3 Radôme</button>
+      <button class="tb-btn" type="button" data-go="sudoku">4 Sudoku</button>
+      <button class="tb-btn" type="button" data-go="mots">5 Mots</button>
+      <button class="tb-btn" type="button" data-go="tempete">6 Tempête</button>
+      <button class="tb-btn" type="button" data-go="fin">Fin</button>
+      <button class="tb-btn" type="button" data-go="sentier">Labyrinthe</button>
+    </nav>
+    <button class="tb-btn tb-more" id="tbMore" type="button" aria-expanded="false" aria-controls="tbPanel">Réglages</button>
+  </div>
+  <div class="tb-panel" id="tbPanel" hidden>
+    <label for="tbPrenom">Prénom de l'invité
+      <input id="tbPrenom" type="text" value="" autocomplete="off">
+    </label>
+    <label for="tbMaze">Labyrinthe (hors parcours) : quand on atteint la sortie
+      <select id="tbMaze">
+        <option value="sentier">retour au début du labyrinthe</option>
+        <option value="debut">retour à l'étape 1 (une seule fois)</option>
+      </select>
+    </label>
+    <div class="tb-line">
+      <span>Dernier code du phare : <b id="tbCode">3112</b></span>
+      <button class="tb-btn" id="tbReset" type="button">Tout réinitialiser</button>
+    </div>
+  </div>
+</div>
+
+<main class="app" id="app">
+  <div class="progress" id="progress" hidden>
+    <span class="progress-label" id="progLabel">Étape 1 sur 3</span>
+    <ol aria-hidden="true" id="progBar"></ol>
+  </div>
+
+  <!-- ============ INTRO ============ -->
+  <section class="screen" id="scr-intro" aria-labelledby="introTitle">
+    <div class="alert-eyebrow"><span class="voyant" aria-hidden="true"></span>Contrôle d'accès · niveau renforcé</div>
+    <div class="intro-hero">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><use href="#goeland"/></svg>
+      <span class="tampon">Suspect</span>
+    </div>
+    <h1 id="introTitle">Profil suspect détecté</h1>
+    <p class="lede">Bonjour <b class="js-prenom"></b>. Votre connexion présente des signes inhabituels. Avant d'ouvrir votre invitation, l'agent Goéland doit vérifier que vous êtes bien vous.</p>
+    <ul class="scan" aria-label="Résultat de l'analyse">
+      <li><span>Adresse e-mail</span><b class="c-ok">reconnue</b></li>
+      <li><span>Envie de champagne</span><b class="c-warn">anormalement élevée</b></li>
+      <li><span>Lieu de connexion</span><b class="c-warn">un canapé</b></li>
+      <li><span>Niveau de suspicion</span><b class="c-ko">maximal</b></li>
+    </ul>
+    <button class="btn btn-or btn-wide" id="introGo" type="button">Commencer la vérification</button>
+    <p class="fine">Trois étapes, environ cinq minutes. Aucun goéland n'a été maltraité.</p>
+  </section>
+
+  <!-- ============ 1 · THE PHISHING CATCH ============ -->
+  <section class="screen" id="scr-peche" hidden aria-labelledby="pecheTitle">
+    <header class="lvl-head">
+      <p class="eyebrow">Étape 1 · La pêche au phishing</p>
+      <h2 id="pecheTitle">Triez la pêche du jour</h2>
+      <p>Huit messages sont remontés dans le filet. Gardez les vrais, rejetez les arnaques. Il en faut six justes pour passer.</p>
+    </header>
+    <div class="filet">
+      <span class="filet-fish" id="pecheFish" aria-hidden="true"></span>
+      <span class="filet-n" id="pecheScore" aria-live="polite">0 juste sur 8</span>
+    </div>
+    <div class="stack" id="pecheStack"></div>
+    <div class="peche-actions" id="pecheActions">
+      <button class="btn btn-ko" id="pecheKo" type="button">← À l'eau, arnaque</button>
+      <button class="btn btn-ok" id="pecheOk" type="button">Je garde, fiable →</button>
+    </div>
+    <p class="fine" id="pecheHelp">Glissez la carte vers la gauche ou la droite, ou utilisez les flèches du clavier.</p>
+    <div class="verdict" id="pecheVerdict" hidden aria-live="polite">
+      <p class="verdict-title" id="pecheVerdictTitle"></p>
+      <p class="verdict-why" id="pecheVerdictWhy"></p>
+      <button class="btn btn-ghost" id="pecheNext" type="button">Message suivant</button>
+    </div>
+    <div class="result" id="pecheResult" hidden>
+      <h3 id="pecheResultTitle"></h3>
+      <p id="pecheResultTxt"></p>
+      <button class="btn btn-ghost" id="pecheRetry" type="button">Recommencer la pêche</button>
+      <button class="btn btn-or" id="pecheContinue" type="button">Étape suivante</button>
+    </div>
+    <div class="agent">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><use href="#goeland"/></svg>
+      <p class="bubble" aria-live="polite"><span class="who">Agent Goéland</span><span id="pecheAgent"></span></p>
+    </div>
+  </section>
+
+  <!-- ============ 2 · THE MEAN RUZ LIGHTHOUSE ============ -->
+  <section class="screen" id="scr-phare" hidden aria-labelledby="phareTitle">
+    <header class="lvl-head">
+      <p class="eyebrow">Étape 2 · Le phare de Mean Ruz</p>
+      <h2 id="phareTitle">Recevez votre code de vérification</h2>
+      <p>Le phare de Ploumanac'h va vous envoyer un code à 4 chiffres. Chaque chiffre est un nombre d'éclats, et une pause plus longue sépare deux chiffres. Le code expire 30 secondes après la fin de l'envoi.</p>
+    </header>
+    <div class="scene" id="phareScene">
+      <canvas id="phareFx" aria-hidden="true"></canvas>
+      <svg viewBox="0 0 360 230" aria-hidden="true">
+        <defs>
+          <linearGradient id="gBeamL" x1="1" y1="0" x2="0" y2="0"><stop offset="0" class="st-sun" stop-opacity=".6"/><stop offset="1" class="st-sun" stop-opacity="0"/></linearGradient>
+          <linearGradient id="gBeamR" x1="0" y1="0" x2="1" y2="0"><stop offset="0" class="st-sun" stop-opacity=".6"/><stop offset="1" class="st-sun" stop-opacity="0"/></linearGradient>
+          <radialGradient id="gHalo"><stop offset="0" class="st-sun" stop-opacity=".95"/><stop offset=".35" class="st-sun" stop-opacity=".35"/><stop offset="1" class="st-sun" stop-opacity="0"/></radialGradient>
+        </defs>
+        <rect class="sky-wash" width="360" height="230"/>
+        <g class="stars"><circle cx="30" cy="22" r="1"/><circle cx="74" cy="48" r=".8"/><circle cx="118" cy="16" r="1.1"/><circle cx="246" cy="30" r=".9"/><circle cx="296" cy="14" r="1.2"/><circle cx="332" cy="52" r=".8"/><circle cx="214" cy="60" r=".7"/><circle cx="150" cy="40" r=".7"/></g>
+        <polygon class="beam" points="180,74 0,22 0,126 180,84" fill="url(#gBeamL)"/>
+        <polygon class="beam" points="180,74 360,22 360,126 180,84" fill="url(#gBeamR)"/>
+        <path class="sea" d="M0 197 H360 V230 H0 Z"/>
+        <path class="wave" d="M12 208 q10 -4 20 0 t20 0 M84 218 q10 -4 20 0 t20 0 M240 210 q10 -4 20 0 t20 0 M300 222 q10 -4 20 0 t20 0"/>
+        <path class="rock-back" d="M126 200 C128 182 150 176 180 178 C210 176 234 184 238 200 Z"/>
+        <path class="tower" d="M164 182 L168 102 L192 102 L196 182 Z"/>
+        <path class="masonry" d="M165 170 H195 M165.6 158 H194.4 M166.2 146 H193.8 M166.8 134 H193.2 M167.4 122 H192.6 M168 110 H192"/>
+        <path class="door" d="M176 182 V173 a4 4 0 0 1 8 0 V182 Z"/>
+        <rect class="window" x="177.5" y="138" width="5" height="8" rx="1"/>
+        <rect class="gallery" x="162" y="96" width="36" height="6" rx="1"/>
+        <path class="rail" d="M163 96 V90 H197 V96 M170 90 V96 M180 90 V96 M190 90 V96"/>
+        <rect class="lantern" x="170" y="68" width="20" height="22" rx="1.5"/>
+        <circle class="halo" cx="180" cy="79" r="46" fill="url(#gHalo)"/>
+        <circle class="lamp" cx="180" cy="79" r="5.5"/>
+        <path class="mullion" d="M176.5 68 V90 M183.5 68 V90"/>
+        <path class="cap" d="M167 68 Q180 52 193 68 Z"/>
+        <path class="finial" d="M180 57 V50"/>
+        <path class="rock" d="M94 205 C94 186 112 178 128 182 C146 186 152 196 150 205 Z"/>
+        <path class="rock rock-2" d="M208 205 C206 190 222 182 240 184 C262 186 270 196 268 205 Z"/>
+        <path class="rock rock-3" d="M140 207 C142 196 152 192 162 194 C172 196 174 202 172 207 Z"/>
+        <path class="rock rock-3" d="M256 207 C260 198 274 195 284 199 C292 203 292 207 292 207 Z"/>
+      </svg>
+    </div>
+    <div class="phare-status">
+      <span id="phareStatus" aria-live="polite">Prêt à émettre.</span>
+      <span class="countdown" id="phareCount" hidden>0:30</span>
+    </div>
+    <div class="tally" id="phareTally" hidden aria-hidden="true"></div>
+    <form class="otp" id="phareForm" autocomplete="off" novalidate>
+      <label class="visually-hidden" for="otp0">Code à 4 chiffres</label>
+      <input id="otp0" inputmode="numeric" autocomplete="one-time-code" aria-label="Chiffre 1" disabled>
+      <input id="otp1" inputmode="numeric" autocomplete="off" aria-label="Chiffre 2" disabled>
+      <input id="otp2" inputmode="numeric" autocomplete="off" aria-label="Chiffre 3" disabled>
+      <input id="otp3" inputmode="numeric" autocomplete="off" aria-label="Chiffre 4" disabled>
+    </form>
+    <p class="form-msg" id="phareMsg" role="status"></p>
+    <button class="btn btn-or btn-wide" id="phareSend" type="button">Recevoir le code</button>
+    <button class="btn btn-or btn-wide" id="phareNext" type="button" hidden>Étape suivante</button>
+    <div class="agent">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><use href="#goeland"/></svg>
+      <p class="bubble" aria-live="polite"><span class="who">Agent Goéland</span><span id="phareAgent"></span></p>
+    </div>
+  </section>
+
+  <!-- ============ 3 · THE RADOME PASSWORD ============ -->
+  <section class="screen" id="scr-radome" hidden aria-labelledby="radomeTitle">
+    <header class="lvl-head">
+      <p class="eyebrow">Étape 3 · Le mot de passe du Radôme</p>
+      <h2 id="radomeTitle">Choisissez un nouveau mot de passe</h2>
+      <p>En 1962, le Radôme de Pleumeur-Bodou a reçu les premières images de télévision envoyées d'Amérique par satellite. Il exige un mot de passe à la hauteur.</p>
+    </header>
+    <div class="radome-wrap">
+      <svg id="radomeSvg" viewBox="0 0 300 210" role="img" aria-label="Le Radôme : un panneau s'allume par règle respectée"></svg>
+      <p class="radome-n" id="radomeN">0 / 11 panneaux allumés</p>
+    </div>
+    <div class="pwd-group">
+      <label class="field-label" for="pwd">Nouveau mot de passe <span id="pwdCount">0 caractère</span></label>
+      <input class="pwd" id="pwd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <p class="fine">Affiché en clair pour votre confort. Ce qui est déjà une faille.</p>
+    </div>
+    <ol class="rules" id="rules" aria-live="polite"></ol>
+    <div class="confirm" id="confirmBox" hidden>
+      <label class="field-label" for="pwd2">Confirmez le mot de passe</label>
+      <input class="pwd" id="pwd2" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button type="button" class="chip" id="pwdGlass">Insérer 🥂</button>
+      <button class="btn btn-or" id="pwdSubmit" type="button">Valider le mot de passe</button>
+      <p class="form-msg" id="pwdMsg" role="status"></p>
+    </div>
+    <div class="result is-ok" id="radomeDone" hidden>
+      <h3>Mot de passe trop fort.</h3>
+      <p>Personne ne s'en souviendra, vous non plus. Accès accordé.</p>
+      <button class="btn btn-or" id="radomeNext" type="button">Terminer la vérification</button>
+    </div>
+    <div class="agent">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><use href="#goeland"/></svg>
+      <p class="bubble" aria-live="polite"><span class="who">Agent Goéland</span><span id="radomeAgent"></span></p>
+    </div>
+  </section>
+
+  <!-- ============ 4 · THE SUDOKU (interrupted) ============ -->
+  <section class="screen" id="scr-sudoku" hidden aria-labelledby="sudokuTitle">
+    <header class="lvl-head">
+      <p class="eyebrow">Étape 4 sur 3 · Le sudoku anti-robot</p>
+      <h2 id="sudokuTitle">Prouvez que vous n'êtes pas un robot</h2>
+      <p>Les robots savent très bien faire les sudokus, mais ils trouvent ça ennuyeux. Complétez cette grille facile pour prouver que vous êtes humain.</p>
+    </header>
+    <div class="sdk" id="sdk" role="grid" aria-label="Grille de sudoku"></div>
+    <div class="keypad" id="keypad" role="group" aria-label="Chiffres">
+      <button type="button" data-d="1">1</button><button type="button" data-d="2">2</button><button type="button" data-d="3">3</button><button type="button" data-d="4">4</button><button type="button" data-d="5">5</button>
+      <button type="button" data-d="6">6</button><button type="button" data-d="7">7</button><button type="button" data-d="8">8</button><button type="button" data-d="9">9</button><button type="button" class="kp-erase" data-d="">Effacer</button>
+    </div>
+    <p class="fine">Touchez une case vide, puis un chiffre. Au clavier : flèches et chiffres.</p>
+    <div class="agent">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><use href="#goeland"/></svg>
+      <p class="bubble" aria-live="polite"><span class="who">Agent Goéland</span><span id="sudokuAgent"></span></p>
+    </div>
+  </section>
+
+  <!-- ============ 5 · THE CROSSWORD ============ -->
+  <section class="screen" id="scr-mots" hidden aria-labelledby="motsTitle">
+    <header class="lvl-head">
+      <p class="eyebrow">Étape 5 sur 3 · Les mots croisés du Goéland</p>
+      <h2 id="motsTitle">Un tout dernier contrôle</h2>
+      <p>Six mots à trouver. Une fois la grille remplie, ils formeront le message que le service de sécurité tient à vous transmettre.</p>
+    </header>
+    <p class="cw-cluebar" id="cwBar"><b></b><span></span></p>
+    <div class="cw" id="cw"></div>
+    <div class="phrase" id="phrase" aria-label="Message à reconstituer"></div>
+    <ol class="clues" id="clues"></ol>
+    <div class="result is-ok" id="motsDone" hidden>
+      <p class="phrase-big">Les mots de passe, c'est chiant.</p>
+      <p>Message reçu. Le Goéland est entièrement d'accord.</p>
+      <button class="btn btn-or" id="motsNext" type="button">Valider la grille</button>
+    </div>
+    <div class="agent">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><use href="#goeland"/></svg>
+      <p class="bubble" aria-live="polite"><span class="who">Agent Goéland</span><span id="motsAgent"></span></p>
+    </div>
+  </section>
+
+  <!-- ============ 6 · THE POP-UP STORM (speed game) ============ -->
+  <section class="screen" id="scr-tempete" hidden aria-labelledby="tempeteTitle">
+    <header class="lvl-head">
+      <p class="eyebrow">Étape 6 sur 3 · La tempête de pop-ups</p>
+      <h2 id="tempeteTitle">Survivez à la tempête</h2>
+      <p>Pendant 30 secondes, des fenêtres vont s'ouvrir de plus en plus vite. Fermez-les avec la petite croix, jamais avec le gros bouton. À <span id="stormLimitTxt">six</span> fenêtres ouvertes, votre session coule.</p>
+    </header>
+    <div class="storm-hud">
+      <div class="hud-item"><span>Temps restant</span><b id="stormTime">30,0 s</b></div>
+      <div class="hud-item hud-open"><span>Fenêtres ouvertes <b id="stormOpen" style="font:inherit;color:var(--ecume)">0 / 6</b></span><span class="storm-dots" id="stormDots"></span></div>
+    </div>
+    <div class="storm-bar" aria-hidden="true"><i id="stormBar"></i></div>
+    <div class="storm" id="storm">
+      <div class="storm-idle" id="stormIdle">
+        <p>La météo annonce un fort coup de vent de fenêtres sur la Côte de Granit Rose.</p>
+        <button class="btn btn-or" id="stormGo" type="button">Lancer la tempête</button>
+      </div>
+      <div class="storm-count" id="stormCount" hidden aria-live="assertive">3</div>
+    </div>
+    <div class="result is-ko" id="stormLost" hidden>
+      <h3>Session coulée.</h3>
+      <p id="stormLostTxt"></p>
+      <button class="btn btn-or" id="stormRetry" type="button">Relancer la tempête</button>
+    </div>
+    <div class="result is-ok" id="stormWon" hidden>
+      <h3>Tempête passée.</h3>
+      <p>Trente secondes sans couler. Votre session est récupérée.</p>
+      <button class="btn btn-or" id="stormNext" type="button">Voir mon accès</button>
+    </div>
+    <div class="agent">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><use href="#goeland"/></svg>
+      <p class="bubble" aria-live="polite"><span class="who">Agent Goéland</span><span id="tempeteAgent"></span></p>
+    </div>
+  </section>
+
+  <!-- ============ MAZE (not in the sequence, reachable from the test bar) ============ -->
+  <section class="screen" id="scr-sentier" hidden aria-labelledby="sentierTitle">
+    <header class="lvl-head">
+      <p class="eyebrow">Hors parcours · Le sentier des douaniers</p>
+      <h2 id="sentierTitle">Récupérez votre session</h2>
+      <p>Votre session a expiré pendant que vous choisissiez votre mot de passe. Pour la récupérer, suivez le sentier des douaniers jusqu'à la sortie. Il fait nuit, votre lampe n'éclaire que deux pas.</p>
+    </header>
+    <div class="maze-wrap" id="mazeWrap">
+      <canvas id="maze" role="img" aria-label="Labyrinthe du sentier des douaniers"></canvas>
+    </div>
+    <ul class="legend">
+      <li><i class="lg lg-me"></i>Vous</li>
+      <li><i class="lg lg-exit"></i>Sortie</li>
+      <li><i class="lg lg-door">?</i>Mot de passe oublié</li>
+      <li><i class="lg lg-door">@</i>Support</li>
+      <li><i class="lg lg-gate"></i>Entrée</li>
+    </ul>
+    <div class="maze-bottom" id="mazeControls">
+      <div class="dpad" role="group" aria-label="Déplacements">
+        <button class="up" type="button" data-dir="0,-1" aria-label="Haut"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 13 L10 7 L16 13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="left" type="button" data-dir="-1,0" aria-label="Gauche"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13 4 L7 10 L13 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="mid">Tours<b id="mazeLoops">0</b></div>
+        <button class="right" type="button" data-dir="1,0" aria-label="Droite"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4 L13 10 L7 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="down" type="button" data-dir="0,1" aria-label="Bas"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7 L10 13 L16 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div class="maze-help">
+        <p class="fine">Flèches ou ZQSD pour avancer d'un pas. Glissez sur le labyrinthe pour courir jusqu'au prochain croisement.</p>
+      </div>
+    </div>
+    <div class="result is-ok" id="sentierDone" hidden>
+      <h3>Sorti… par l'entrée.</h3>
+      <p>La sortie était là où tout a commencé. Comme dans la plupart des procédures de sécurité.</p>
+      <button class="btn btn-or" id="sentierNext" type="button">Voir mon accès</button>
+    </div>
+    <div class="agent">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><use href="#goeland"/></svg>
+      <p class="bubble" aria-live="polite"><span class="who">Agent Goéland</span><span id="sentierAgent"></span></p>
+    </div>
+  </section>
+
+  <!-- ============ END ============ -->
+  <section class="screen" id="scr-fin" hidden aria-labelledby="finTitle">
+    <canvas class="fin-fx" id="finFx" aria-hidden="true"></canvas>
+    <svg class="badge" viewBox="0 0 200 200" role="img" aria-label="Badge Agent certifié du Réveillon">
+      <defs><path id="badgeArc" d="M100,100 m-75,0 a75,75 0 1,1 150,0 a75,75 0 1,1 -150,0"/></defs>
+      <circle class="badge-ring" cx="100" cy="100" r="97"/>
+      <circle class="badge-dash" cx="100" cy="100" r="89"/>
+      <circle class="badge-core" cx="100" cy="100" r="62"/>
+      <text class="badge-txt"><textPath href="#badgeArc" textLength="462" lengthAdjust="spacing">AGENT CERTIFIÉ · RÉVEILLON 31.12.2026 · ÎLE GRANDE ·</textPath></text>
+      <use href="#goeland" x="54" y="50" width="92" height="92"/>
+    </svg>
+    <div class="fin-head">
+      <h1 id="finTitle">Accès autorisé</h1>
+      <p>Bienvenue, <b class="js-prenom"></b>. Le Goéland vous laisse passer. Votre badge d'agent certifié vous attend dans votre espace.</p>
+    </div>
+    <dl class="stats">
+      <div><dt>Durée</dt><dd id="stTime">–</dd></div>
+      <div><dt>Pêche</dt><dd id="stPeche">–</dd></div>
+      <div><dt>Codes demandés</dt><dd id="stPhare">–</dd></div>
+      <div><dt>Tempêtes affrontées</dt><dd id="stStorm">–</dd></div>
+    </dl>
+    <button class="btn btn-or btn-wide" id="finGo" type="button">Ouvrir mon invitation</button>
+    <p class="fine" id="finTest" style="text-align:center" hidden>Page ouverte seule : ce bouton relance la vérification. Sur le site, il ouvre l'espace de l'invité.</p>
+  </section>
+</main>
+
+<div class="glitch" id="glitch" hidden role="alertdialog" aria-labelledby="glitchCode" aria-describedby="glitchMsg">
+  <div class="glitch-box">
+    <svg class="glitch-goeland" id="glitchGoeland" viewBox="0 0 120 120" aria-hidden="true" hidden><use href="#goeland"/></svg>
+    <p class="glitch-code" id="glitchCode">SESSION EXPIRÉE</p>
+    <p class="glitch-msg" id="glitchMsg"></p>
+    <button class="btn btn-ghost" id="glitchGo" type="button">Continuer</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ================= utilities ================= */
+const $ = (id) => document.getElementById(id);
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const norm = (s) => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’`]/g, "'");
+const chars = (s) => Array.from(s);
+const fr = (s) => String(s).replace(/ ([?!:;»])/g, " $1").replace(/« /g, "« ");
+const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const rand = (a, b) => a + Math.random() * (b - a);
+const vibrate = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* ignore */ } };
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* ignore */ } };
+const css = getComputedStyle(document.documentElement);
+const tok = (n) => css.getPropertyValue(n).trim();
+const hexA = (hex, a) => { const h = hex.replace("#", ""); const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16); return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")"; };
+const FONT_MONO = '"IBM Plex Mono", ui-monospace, Menlo, monospace';
+
+function say(id, html) {
+  const el = $(id);
+  el.innerHTML = fr(html);
+  const b = el.closest(".bubble");
+  if (b) { b.classList.remove("talk"); void b.offsetWidth; b.classList.add("talk"); }
+}
+let toastT = 0;
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = fr(msg);
+  t.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove("show"), 2600);
+}
+let glitchThen = null;
+function glitch(code, html, btn, then, opts) {
+  opts = opts || {};
+  const g = $("glitch");
+  $("glitchCode").textContent = code;
+  $("glitchMsg").innerHTML = fr(html);
+  $("glitchGo").textContent = btn || "Continuer";
+  $("glitchGoeland").toggleAttribute("hidden", !opts.goeland);
+  g.classList.toggle("is-goeland", !!opts.goeland);
+  glitchThen = then;
+  g.hidden = false;
+  g.classList.remove("play"); void g.offsetWidth; g.classList.add("play");
+  vibrate([40, 30, 40]);
+  setTimeout(() => $("glitchGo").focus({ preventScroll: true }), 60);
+}
+$("glitchGo").addEventListener("click", () => {
+  $("glitch").hidden = true;
+  const f = glitchThen; glitchThen = null;
+  if (f) f();
+});
+
+/* ================= state & navigation ================= */
+// Settings passed in the URL: goeland.html?prenom=…  (the site fills it in itself)
+//                             goeland.html?test      (test bar to jump between steps)
+const URLP = new URLSearchParams(location.search);
+const TEST = URLP.has("test");
+const EMBED = window.parent !== window;   // opened by the site, inside its full-screen overlay
+const state = {
+  screen: "intro",
+  prenom: (URLP.get("prenom") || "").trim().slice(0, 40),
+  mazeEnd: "sentier",
+  lastCode: "3112",
+  mazeLoops: 0,
+  mazeSentBack: false,
+  oubli: false,
+  stats: { t0: 0, peche: null, codes: 0, tempete: 0 }
+};
+const SCREENS = ["intro", "peche", "phare", "radome", "sudoku", "mots", "tempete", "sentier", "fin"];
+const STEP_IDX = { peche: 1, phare: 2, radome: 3, sudoku: 4, mots: 5, tempete: 6 };
+const MOD = {};
+
+function go(name) {
+  if (SCREENS.indexOf(name) === -1) name = "intro";
+  const prev = state.screen;
+  if (MOD[prev] && MOD[prev].leave) MOD[prev].leave();
+  state.screen = name;
+  SCREENS.forEach((s) => { $("scr-" + s).hidden = s !== name; });
+  $("glitch").hidden = true;
+  updateProgress();
+  document.querySelectorAll("[data-go]").forEach((b) => b.setAttribute("aria-current", b.dataset.go === name ? "step" : "false"));
+  if (MOD[name] && MOD[name].enter) MOD[name].enter();
+  window.scrollTo(0, 0);
+  const h = $("scr-" + name).querySelector("h1, h2");
+  if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+}
+
+function updateProgress() {
+  const idx = STEP_IDX[state.screen];
+  const p = $("progress");
+  p.hidden = !idx;
+  if (!idx) return;
+  $("progLabel").textContent = "Étape " + idx + " sur 3";
+  let html = "";
+  for (let i = 0; i < Math.max(3, idx); i++) {
+    html += '<li class="' + (i < idx - 1 ? "done" : i === idx - 1 ? "cur" : "") + (i >= 3 ? " extra" : "") + '"></li>';
+  }
+  $("progBar").innerHTML = html;
+  p.classList.toggle("over", idx > 3);
+}
+
+function setPrenomTexts() {
+  document.querySelectorAll(".js-prenom").forEach((el) => { el.textContent = state.prenom || "cher invité"; });
+}
+
+/* ================= particles (fireworks + confetti) ================= */
+class Sparks {
+  constructor(canvas, mode) { this.c = canvas; this.ctx = canvas.getContext("2d"); this.mode = mode; this.p = []; this.fl = []; this.on = false; this.raf = 0; this.spawn = 0; }
+  size() {
+    const r = this.c.getBoundingClientRect();
+    const d = Math.min(2, window.devicePixelRatio || 1);
+    this.w = r.width; this.h = r.height;
+    this.c.width = Math.max(1, Math.round(r.width * d)); this.c.height = Math.max(1, Math.round(r.height * d));
+    this.ctx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  colors() { return ["--soleil", "--or", "--granit", "--algue", "--corail-txt", "--ecume"].map(tok); }
+  start() {
+    if (this.on) return;
+    this.on = true; this.size(); this.last = performance.now(); this.spawn = 0.2;
+    if (this.mode === "confetti") this.confetti();
+    const loop = (t) => {
+      if (!this.on && !this.p.length && !this.fl.length) { this.ctx.clearRect(0, 0, this.w, this.h); this.raf = 0; return; }
+      this.step(t);
+      this.raf = requestAnimationFrame(loop);
+    };
+    if (!this.raf) this.raf = requestAnimationFrame(loop);
+  }
+  stop() { this.on = false; }
+  kill() { this.on = false; this.p = []; this.fl = []; if (this.raf) cancelAnimationFrame(this.raf); this.raf = 0; if (this.w) this.ctx.clearRect(0, 0, this.w, this.h); }
+  burst(x, y) {
+    const cols = this.colors(); const col = cols[Math.floor(Math.random() * cols.length)];
+    const n = REDUCED ? 16 : 44;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + rand(-0.1, 0.1), v = rand(50, 150);
+      this.p.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, decay: rand(0.55, 0.9), col, r: rand(1.2, 2) });
+    }
+    if (!REDUCED) this.fl.push({ x, y, a: 0.45, col });
+  }
+  confetti() {
+    const cols = this.colors();
+    const n = REDUCED ? 40 : 130;
+    for (let i = 0; i < n; i++) {
+      this.p.push({ x: this.w / 2 + rand(-40, 40), y: this.h * 0.32, vx: rand(-240, 240), vy: rand(-460, -160), life: 1, decay: rand(0.22, 0.38), col: cols[i % cols.length], r: rand(3, 5.5), rot: rand(0, 6), vr: rand(-8, 8), conf: true });
+    }
+  }
+  step(t) {
+    const dt = Math.min(0.05, (t - this.last) / 1000); this.last = t;
+    const ctx = this.ctx; ctx.clearRect(0, 0, this.w, this.h);
+    if (this.on && this.mode === "fireworks") {
+      this.spawn -= dt;
+      if (this.spawn <= 0) { this.burst(rand(0.08, 0.92) * this.w, rand(0.06, 0.48) * this.h); this.spawn = REDUCED ? 1.8 : rand(0.4, 0.85); }
+    }
+    if (this.mode === "confetti" && !this.p.length) this.on = false;
+    this.fl.forEach((f) => {
+      const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, 60);
+      g.addColorStop(0, hexA(f.col, f.a)); g.addColorStop(1, hexA(f.col, 0));
+      ctx.fillStyle = g; ctx.fillRect(f.x - 60, f.y - 60, 120, 120);
+      f.a -= dt * 1.4;
+    });
+    this.fl = this.fl.filter((f) => f.a > 0);
+    const grav = this.mode === "confetti" ? 380 : 55;
+    this.p.forEach((p) => {
+      p.vy += grav * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.985; p.life -= p.decay * dt;
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+      ctx.fillStyle = p.col;
+      if (p.conf) {
+        p.rot += p.vr * dt;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillRect(-p.r, -p.r / 2.4, p.r * 2, p.r / 1.2); ctx.restore();
+      } else {
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      }
+    });
+    ctx.globalAlpha = 1;
+    this.p = this.p.filter((p) => p.life > 0 && p.y < this.h + 30);
+  }
+}
+const Fx = { phare: new Sparks($("phareFx"), "fireworks"), fin: new Sparks($("finFx"), "confetti") };
+
+/* ================= INTRO ================= */
+MOD.intro = { enter() { setPrenomTexts(); } };
+$("introGo").addEventListener("click", () => {
+  state.stats = { t0: Date.now(), peche: null, codes: 0, tempete: 0 };
+  state.mazeLoops = 0;
+  state.mazeSentBack = false;
+  state.oubli = false;
+  go("peche");
+});
+
+/* ================= 1 · THE PHISHING CATCH ================= */
+const PECHE = [
+  { canal: "E-mail", de: "L'organisatrice", adr: "orga@reveillon-ile-grande.fr.secure-login.ru", objet: "Votre place expire ce soir", corps: "Suite à une mise à jour de sécurité, votre place au réveillon sera libérée à minuit. Confirmez vos identifiants pour la conserver.", lien: "https://reveillon-ile-grande.fr.secure-login.ru/confirmer", arnaque: true,
+    why: "Le vrai domaine, c'est la fin de l'adresse : <b>secure-login.ru</b>. Le début n'est qu'un déguisement. Et l'urgence (« ce soir ») sert à vous faire cliquer sans réfléchir." },
+  { canal: "SMS", de: "Mamie", adr: "06 •• •• •• 12", corps: "Je fais des crêpes pour 40 personnes, vous pensez que c'est assez ? Bisous, Mamie", arnaque: false,
+    why: "Pas de lien, pas d'argent demandé, pas d'urgence. Juste une question sur les crêpes. Fiable. (Et non, ce n'est jamais assez.)" },
+  { canal: "SMS", de: "Livraison Info", adr: "+33 7 57 •• •• 41", corps: "Votre colis « Champagne x6 » est bloqué au dépôt de Lannion. Frais de réacheminement : 1,99 €. Réglez avant 18h :", lien: "https://livraison-colis-fr.info/lannion", arnaque: true,
+    why: "Petite somme, urgence et domaine inconnu : on veut votre numéro de carte, pas vos 1,99 €. Les transporteurs ne réclament pas de frais par SMS." },
+  { canal: "WhatsApp", de: "Tonton Yann", adr: "Contact enregistré", corps: "BONJOUR C'EST TONTON. MON TÉLÉPHONE S'EST MIS EN MAJUSCULES ET JE N'ARRIVE PAS À L'ENLEVER. JE RAMÈNE LES HUÎTRES. ET UN OUVRE-HUÎTRES CETTE FOIS.", arnaque: false,
+    why: "Étrange, mais c'est un contact connu, il n'y a aucun lien et il ne demande rien. Bizarre ne veut pas dire arnaque." },
+  { canal: "SMS", de: "Numéro inconnu", adr: "+33 6 44 •• •• 90", corps: "Coucou c'est moi, j'ai cassé mon téléphone, voici mon nouveau numéro. Tu peux me faire un virement de 250 € pour les courses du buffet ? C'est urgent, je te rembourse au réveillon.", arnaque: true,
+    why: "« C'est moi, nouveau numéro, virement urgent » : c'est l'arnaque au proche. On appelle l'ancien numéro avant d'envoyer quoi que ce soit." },
+  { canal: "WhatsApp", de: "Maël", adr: "Contact enregistré", corps: "Je pars de Rennes le 30 vers 14h, il me reste 2 places. Inscris-toi dans la rubrique « Venir » du site si ça t'intéresse !", arnaque: false,
+    why: "Il vous renvoie vers le site que vous connaissez déjà, sans lien à cliquer ni information à donner. Fiable." },
+  { canal: "E-mail", de: "Vigilance Météo", adr: "alerte@vigilance-meteo-france.com", objet: "Vigilance rouge : réveillon annulé", corps: "En raison d'une tempête sur les Côtes-d'Armor, votre réveillon est annulé. Réclamez le remboursement de votre participation (45 €) avant le 31/12.", lien: "https://vigilance-meteo-france.com/remboursement", arnaque: true,
+    why: "Un service météo n'annule pas les fêtes et ne rembourse rien. Personne n'a payé 45 € pour venir : l'arnaque invente une somme pour vous faire réagir." },
+  { canal: "E-mail", de: "L'organisatrice", adr: "orga@reveiIlon-ile-grande.fr", objet: "Liste du buffet mise à jour", corps: "Voici la nouvelle répartition du buffet. Merci d'ouvrir la pièce jointe et de cocher votre plat.", piece: "liste_buffet.pdf.exe", arnaque: true,
+    why: "Deux pièges : « reve<b>I</b>llon » est écrit avec un i majuscule déguisé en L, et la pièce jointe finit par <b>.exe</b> : c'est un programme, pas un PDF. Et le buffet se remplit sur le site, pas par e-mail." }
+];
+const FISH_SVG = '<svg viewBox="0 0 24 14"><path d="M2 7c3-5 10-6 15-2l5-4v12l-5-4C12 13 5 12 2 7Z"/><circle cx="7" cy="6" r="1.1"/></svg>';
+const CLIP_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 4.5 5.8 9.2a1.4 1.4 0 0 0 2 2l5-5a2.6 2.6 0 0 0-3.7-3.7l-5.2 5.2a3.8 3.8 0 0 0 5.4 5.4L13 9.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+
+function cardHTML(m, cls) {
+  return '<article class="msg ' + cls + '">' +
+    '<div class="msg-top"><span class="canal">' + esc(m.canal) + '</span><span class="msg-de">' + esc(m.de) + "</span></div>" +
+    '<p class="msg-adr">' + esc(m.adr) + "</p>" +
+    (m.objet ? '<p class="msg-objet">' + esc(fr(m.objet)) + "</p>" : "") +
+    '<p class="msg-corps">' + esc(fr(m.corps)) + "</p>" +
+    (m.lien ? '<p class="msg-lien">' + esc(m.lien) + "</p>" : "") +
+    (m.piece ? '<p class="msg-pj">' + CLIP_SVG + esc(m.piece) + "</p>" : "") +
+    '<span class="stamp stamp-ko" aria-hidden="true">À l\'eau</span><span class="stamp stamp-ok" aria-hidden="true">Je garde</span>' +
+    "</article>";
+}
+
+function dragify(el, onDecide) {
+  let x0 = 0, y0 = 0, dx = 0, dy = 0, pid = null;
+  const ko = el.querySelector(".stamp-ko"), ok = el.querySelector(".stamp-ok");
+  el.addEventListener("pointerdown", (e) => {
+    if (e.button) return;
+    pid = e.pointerId; x0 = e.clientX; y0 = e.clientY; dx = dy = 0;
+    try { el.setPointerCapture(pid); } catch (err) { /* ignore */ }
+    el.classList.add("dragging");
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (e.pointerId !== pid) return;
+    dx = e.clientX - x0; dy = e.clientY - y0;
+    el.style.transform = "translate(" + dx + "px," + dy * 0.25 + "px) rotate(" + dx / 18 + "deg)";
+    const t = Math.min(1, Math.abs(dx) / 90);
+    ko.style.opacity = dx < 0 ? t : 0; ok.style.opacity = dx > 0 ? t : 0;
+  });
+  const end = (e) => {
+    if (e.pointerId !== pid) return;
+    pid = null; el.classList.remove("dragging");
+    if (Math.abs(dx) > 90) onDecide(dx < 0 ? -1 : 1);
+    else { el.style.transform = ""; ko.style.opacity = 0; ok.style.opacity = 0; }
+    dx = dy = 0;
+  };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
+}
+function flyAway(el, dir) {
+  el.classList.add("flying");
+  el.querySelector(dir < 0 ? ".stamp-ko" : ".stamp-ok").style.opacity = 1;
+  requestAnimationFrame(() => {
+    el.style.transform = "translate(" + dir * 520 + "px, 40px) rotate(" + dir * 28 + "deg)";
+    el.style.opacity = "0";
+  });
+  setTimeout(() => el.remove(), REDUCED ? 0 : 340);
+}
+
+MOD.peche = {
+  deck: [], i: 0, score: 0, res: [], busy: false, done: false, fails: 0,
+  enter() { this.reset(); },
+  reset() {
+    this.deck = shuffle(PECHE.slice()); this.i = 0; this.score = 0; this.res = []; this.busy = false; this.done = false;
+    $("pecheVerdict").hidden = true; $("pecheResult").hidden = true;
+    $("pecheActions").hidden = false; $("pecheHelp").hidden = false; $("pecheStack").hidden = false;
+    this.renderScore(); this.renderCards();
+    if (state.oubli) {
+      const quoi = state.oubli;
+      state.oubli = false;
+      say("pecheAgent", quoi === "tonton"
+        ? "Re-bonjour. On reprend tout depuis le début. Cette fois, on lit bien les messages du tonton."
+        : "Re-bonjour. On reprend tout depuis le début. Cette fois, on retient le code du phare.");
+      return;
+    }
+    say("pecheAgent", this.fails
+      ? "Regardez la fin de l'adresse, juste avant le premier « / ». C'est là que se cache le vrai expéditeur."
+      : "Conseil de pro : les arnaques sont pressées. Les vrais messages, beaucoup moins.");
+  },
+  renderScore() {
+    $("pecheFish").innerHTML = this.deck.map((_, k) => '<span class="fish' + (k < this.res.length ? (this.res[k] ? " is-ok" : " is-ko") : "") + '">' + FISH_SVG + "</span>").join("");
+    $("pecheScore").textContent = this.score + (this.score > 1 ? " justes" : " juste") + " sur " + this.deck.length;
+  },
+  renderCards() {
+    const st = $("pecheStack");
+    const cur = this.deck[this.i], nxt = this.deck[this.i + 1];
+    st.innerHTML = (nxt ? cardHTML(nxt, "msg-next") : "") + (cur ? cardHTML(cur, "msg-cur") : "");
+    const el = st.querySelector(".msg-cur");
+    if (el) dragify(el, (dir) => this.decide(dir < 0));
+  },
+  decide(saysScam) {
+    if (this.busy || this.done || state.screen !== "peche") return;
+    const m = this.deck[this.i]; if (!m) return;
+    this.busy = true;
+    const ok = saysScam === m.arnaque;
+    this.res.push(ok); if (ok) this.score++;
+    this.dir = saysScam ? -1 : 1;
+    const el = $("pecheStack").querySelector(".msg-cur");
+    if (el) {
+      // the card stays in place with its stamp while the explanation is read
+      el.classList.add("decided", ok ? "is-ok" : "is-ko");
+      el.style.transform = "";
+      el.querySelector(".stamp-ko").style.opacity = saysScam ? 1 : 0;
+      el.querySelector(".stamp-ok").style.opacity = saysScam ? 0 : 1;
+    }
+    const nx = $("pecheStack").querySelector(".msg-next");
+    if (nx) nx.hidden = true;
+    this.renderScore();
+    if (!ok) vibrate(80);
+    $("pecheActions").hidden = true; $("pecheHelp").hidden = true;
+    const v = $("pecheVerdict");
+    v.className = "verdict " + (ok ? "is-ok" : "is-ko");
+    $("pecheVerdictTitle").textContent = (ok ? "Bien vu. " : "Raté. ") + (m.arnaque ? "C'était une arnaque." : "C'était fiable.");
+    $("pecheVerdictWhy").innerHTML = fr(m.why);
+    $("pecheNext").textContent = this.i === this.deck.length - 1 ? "Voir le résultat" : "Message suivant";
+    v.hidden = false;
+    setTimeout(() => $("pecheNext").focus({ preventScroll: true }), 60);
+  },
+  next() {
+    if (!this.busy) return;
+    $("pecheVerdict").hidden = true;
+    const st = $("pecheStack");
+    const el = st.querySelector(".msg-cur"), nx = st.querySelector(".msg-next");
+    if (nx) nx.hidden = false;
+    if (el) { el.classList.remove("decided"); flyAway(el, this.dir || 1); }
+    this.i++;
+    setTimeout(() => {
+      if (state.screen !== "peche") return;
+      if (this.i >= this.deck.length) { this.finish(); return; }
+      this.renderCards();
+      $("pecheActions").hidden = false; $("pecheHelp").hidden = false;
+      this.busy = false;
+    }, REDUCED ? 0 : 300);
+  },
+  finish() {
+    this.done = true;
+    $("pecheStack").hidden = true;
+    const pass = this.score >= 6;
+    const r = $("pecheResult");
+    r.className = "result " + (pass ? "is-ok" : "is-ko");
+    $("pecheResultTitle").textContent = this.score + " sur 8. " + (pass ? "Belle pêche." : "Le filet est percé.");
+    $("pecheResultTxt").textContent = fr(pass
+      ? "L'agent Goéland est impressionné. Il ne le montrera pas."
+      : "Il en faut six. Le Goéland remet les messages à l'eau, les mélange, et on recommence.");
+    $("pecheRetry").hidden = pass; $("pecheContinue").hidden = !pass;
+    r.hidden = false;
+    if (pass) state.stats.peche = this.score;
+    else { this.fails++; vibrate([60, 40, 60]); }
+    say("pecheAgent", pass ? "Étape 1 validée. Ne vous habituez pas." : "Indice : sur les huit, trois seulement étaient fiables.");
+    setTimeout(() => (pass ? $("pecheContinue") : $("pecheRetry")).focus({ preventScroll: true }), 60);
+  }
+};
+$("pecheKo").addEventListener("click", () => MOD.peche.decide(true));
+$("pecheOk").addEventListener("click", () => MOD.peche.decide(false));
+$("pecheNext").addEventListener("click", () => MOD.peche.next());
+$("pecheRetry").addEventListener("click", () => MOD.peche.reset());
+$("pecheContinue").addEventListener("click", () => go("phare"));
+
+/* ================= 2 · THE MEAN RUZ LIGHTHOUSE ================= */
+MOD.phare = {
+  code: null, sent: 0, fails: 0, sending: false, deadline: 0, timers: [], tick: 0, done: false, tally: null,
+  enter() {
+    this.clearAll(); this.done = false; this.code = null;
+    $("phareSend").hidden = false; $("phareSend").disabled = false;
+    $("phareSend").textContent = this.sent ? "Renvoyer un code" : "Recevoir le code";
+    $("phareNext").hidden = true;
+    this.setInputs(true);
+    this.status("Prêt à émettre."); this.msg("");
+    $("phareCount").hidden = true;
+    $("phareScene").classList.remove("ok", "on");
+    this.renderTally(null);
+    say("phareAgent", this.fails >= 2
+      ? "Mode assisté : les éclats sont plus lents et je les compte avec vous."
+      : "Comptez à voix haute. Personne ne vous regarde. Enfin, à part moi.");
+    if (this.fails > 0) Fx.phare.start();
+  },
+  leave() { this.clearAll(); Fx.phare.kill(); },
+  clearAll() {
+    this.timers.forEach(clearTimeout); this.timers = [];
+    clearInterval(this.tick); this.tick = 0;
+    this.sending = false;
+    $("phareScene").classList.remove("on");
+  },
+  later(fn, t) { this.timers.push(setTimeout(fn, t)); },
+  status(t) { $("phareStatus").textContent = fr(t); },
+  msg(t, kind) { const m = $("phareMsg"); m.textContent = fr(t); m.className = "form-msg" + (kind ? " " + kind : ""); },
+  setInputs(disabled) { for (let k = 0; k < 4; k++) { const el = $("otp" + k); el.value = ""; el.disabled = !!disabled; } },
+  val() { return [0, 1, 2, 3].map((k) => $("otp" + k).value).join(""); },
+  flash(on) { $("phareScene").classList.toggle("on", on); },
+  renderTally(arr, cur) {
+    this.tally = arr;
+    const t = $("phareTally");
+    t.hidden = !arr;
+    if (!arr) return;
+    t.innerHTML = arr.map((n, k) => '<span class="tally-slot' + (k === cur ? " cur" : "") + '">' + "<i></i>".repeat(n) + "</span>").join("");
+  },
+  send() {
+    if (this.sending || this.done) return;
+    this.clearAll();
+    this.code = this.sent === 0 ? "3112" : Array.from({ length: 4 }, () => 1 + Math.floor(Math.random() * 6)).join("");
+    this.sent++; state.stats.codes++; state.lastCode = this.code; testbarSync();
+    this.sending = true; this.deadline = 0;
+    this.setInputs(false);
+    $("otp0").focus({ preventScroll: true });
+    $("phareSend").disabled = true; $("phareCount").hidden = true; this.msg("");
+    this.status("Émission en cours… regardez le phare.");
+    if (this.sent > 1) Fx.phare.start();
+    const assisted = this.fails >= 2;
+    const ON = assisted ? 520 : 380, OFF = assisted ? 560 : 420, GAP = assisted ? 2000 : 1500;
+    this.renderTally(assisted ? [0, 0, 0, 0] : null);
+    let t = 900;
+    this.code.split("").map(Number).forEach((d, k) => {
+      for (let j = 0; j < d; j++) {
+        this.later(() => {
+          this.flash(true);
+          if (this.tally) { this.tally[k]++; this.renderTally(this.tally, k); }
+        }, t);
+        this.later(() => this.flash(false), t + ON);
+        t += ON + OFF;
+      }
+      t += GAP - OFF;
+    });
+    this.later(() => this.endSend(), t);
+  },
+  endSend() {
+    this.sending = false;
+    this.deadline = Date.now() + 30000;
+    $("phareSend").disabled = false; $("phareSend").textContent = "Renvoyer un code";
+    this.status("Code envoyé. Saisissez-le.");
+    $("phareCount").hidden = false;
+    this.updateCount();
+    this.tick = setInterval(() => this.updateCount(), 250);
+  },
+  updateCount() {
+    const left = Math.max(0, this.deadline - Date.now());
+    const s = Math.ceil(left / 1000);
+    const c = $("phareCount");
+    c.textContent = "0:" + String(s).padStart(2, "0");
+    c.classList.toggle("urgent", s <= 10);
+    if (left <= 0) this.fail("expired");
+  },
+  check() {
+    if (this.done) return;
+    const v = this.val();
+    if (v.length < 4) return;
+    if (!this.code) { this.msg("Demandez d'abord un code au phare.", "err"); return; }
+    if (v === this.code) this.success(); else this.fail("wrong");
+  },
+  fail(kind) {
+    this.clearAll();
+    this.fails++; this.code = null;
+    $("phareCount").hidden = true;
+    const f = $("phareForm"); f.classList.remove("shake"); void f.offsetWidth; f.classList.add("shake");
+    vibrate(120);
+    this.setInputs(true);
+    this.renderTally(null);
+    this.msg(kind === "expired" ? "Code expiré. Pour votre sécurité, demandez-en un nouveau." : "Code incorrect. Pour votre sécurité, il vient d'être invalidé.", "err");
+    this.status("En attente d'un nouveau code.");
+    $("phareSend").disabled = false; $("phareSend").textContent = "Renvoyer un code";
+    $("phareSend").focus({ preventScroll: true });
+    const lines = [
+      "Le phare n'aime pas se répéter. Il fait une exception, mais il a invité des amis.",
+      "Mode assisté activé : les éclats ralentissent et je les compte avec vous.",
+      "Les feux d'artifice ne sont pas là par hasard. Ignorez-les, ne regardez que la lanterne.",
+      "Astuce : tapez chaque chiffre pendant la longue pause qui suit ses éclats."
+    ];
+    say("phareAgent", lines[Math.min(this.fails - 1, lines.length - 1)]);
+    Fx.phare.start();
+  },
+  success() {
+    this.clearAll(); this.done = true; this.code = null;
+    $("phareCount").hidden = true;
+    Fx.phare.stop();
+    $("phareScene").classList.add("ok");
+    for (let k = 0; k < 4; k++) $("otp" + k).disabled = true;
+    this.msg("Code accepté. Le phare vous salue.", "ok");
+    this.status("Vérification réussie.");
+    $("phareSend").hidden = true;
+    $("phareNext").hidden = false;
+    $("phareNext").focus({ preventScroll: true });
+    say("phareAgent", "Étape 2 validée. Retenez bien ce code, on ne sait jamais.");
+  }
+};
+for (let k = 0; k < 4; k++) {
+  const el = $("otp" + k);
+  el.addEventListener("input", () => {
+    const d = el.value.replace(/\D/g, "");
+    if (d.length > 1) {
+      d.split("").slice(0, 4 - k).forEach((c, j) => { $("otp" + (k + j)).value = c; });
+      $("otp" + Math.min(3, k + d.length - 1)).focus();
+    } else {
+      el.value = d;
+      if (d && k < 3) $("otp" + (k + 1)).focus();
+    }
+    if (MOD.phare.val().length === 4) MOD.phare.check();
+  });
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" && !el.value && k > 0) { e.preventDefault(); const p = $("otp" + (k - 1)); p.value = ""; p.focus(); }
+    else if (e.key === "ArrowLeft" && k > 0) $("otp" + (k - 1)).focus();
+    else if (e.key === "ArrowRight" && k < 3) $("otp" + (k + 1)).focus();
+  });
+}
+$("phareForm").addEventListener("submit", (e) => { e.preventDefault(); MOD.phare.check(); });
+$("phareSend").addEventListener("click", () => MOD.phare.send());
+$("phareNext").addEventListener("click", () => go("radome"));
+
+/* ================= 3 · THE RADOME PASSWORD ================= */
+// no hint is shown in the game, so the accepted list is broad
+const BZH = ["demat", "kenavo", "trugarez", "bloavezh", "breizh", "kouign", "amann", "krampouezh", "yec'hed", "yeched", "degemer", "enez", "gwenn",
+  "kalon", "bihan", "chouchenn", "farz", "fest-noz", "festnoz", "noz", "deiz", "heol", "glao", "loar", "steredenn", "kreiz",
+  "gwin", "nann", "plou", "kemper", "arvor", "argoat"];
+const digitSum = (p) => (p.match(/\d/g) || []).reduce((s, d) => s + Number(d), 0);
+const CHECK_SVG = '<svg viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 11.3 9.6 14.2 15.6 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CROSS_SVG = '<svg viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 7.5 14.5 14.5 M14.5 7.5 7.5 14.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const RULES = [
+  { id: "len", txt: () => "Au moins 8 caractères.", test: (p) => chars(p).length >= 8 },
+  { id: "maj", txt: () => "Au moins une majuscule.", test: (p) => /[A-ZÀ-ÖØ-Þ]/.test(p) },
+  { id: "bzh", txt: () => "Au moins un mot en breton.", test: (p) => BZH.some((w) => norm(p).indexOf(w) !== -1),
+    quip: "Pas d'indice. Le Goéland, lui, parle breton depuis l'œuf." },
+  { id: "dep", txt: () => "Le numéro du département de l'Île Grande.", test: (p) => p.indexOf("22") !== -1,
+    quip: "Indice : regardez les plaques d'immatriculation du coin." },
+  { id: "sum", txt: (p) => "La somme des chiffres doit faire 31. <span class=\"c-warn\">(Actuellement : " + digitSum(p) + ")</span>", test: (p) => digitSum(p) === 31,
+    quip: "Les chiffres du 22 comptent aussi. Je dis ça, je ne dis rien." },
+  { id: "champ", txt: () => "Le symbole officiel du réveillon : 🥂", test: (p) => p.indexOf("🥂") !== -1,
+    quip: "Pas de bouton magique ici : cherchez-le sur votre clavier emoji (Windows + point, ou Ctrl + Cmd + espace sur Mac)." },
+  { id: "nom", txt: () => "Ne doit pas contenir votre prénom. On vous voit venir, " + esc(state.prenom || "cher invité") + ".", test: (p) => !state.prenom || norm(p).indexOf(norm(state.prenom)) === -1,
+    quip: "Celle-ci, vous la respectez déjà. Pour l'instant." },
+  { id: "tonton", txt: () => "Le prénom du tonton bloqué en majuscules, écrit comme il écrit.", extra: () => ' <button type="button" class="linklike" data-act="forgot" data-what="tonton">J\'ai oublié</button>', test: (p) => p.indexOf("YANN") !== -1,
+    quip: "J'espère que vous avez bien lu vos messages à l'étape 1." },
+  { id: "minuit", txt: () => "L'heure du champagne, au format 00h00.", test: (p) => /00h00/i.test(p) || norm(p).indexOf("minuit") !== -1,
+    quip: "Minuit pile. Pas 23h59, le Goéland est pointilleux." },
+  { id: "code", txt: () => "Le code que le phare vous a envoyé à l'étape 2.", extra: () => ' <button type="button" class="linklike" data-act="forgot" data-what="code">J\'ai oublié</button>',
+    test: (p) => p.indexOf(state.lastCode) !== -1,
+    quip: "Je vous avais dit de le retenir." },
+  { id: "max", txt: () => "26 caractères maximum. Au-delà, c'est suspect.", test: (p) => chars(p).length <= 26,
+    quip: "Oui, il va falloir faire de la place." }
+];
+
+function buildRadome() {
+  const svg = $("radomeSvg");
+  const cx = 150, cy = 150, R = 100;
+  const P = (la, lo) => { const a = la * Math.PI / 180, b = lo * Math.PI / 180; return (cx + R * Math.cos(a) * Math.sin(b)).toFixed(1) + "," + (cy - R * Math.sin(a)).toFixed(1); };
+  const quad = (la0, la1, lo0, lo1) => [P(la0, lo0), P(la0, lo1), P(la1, lo1), P(la1, lo0)].join(" ");
+  let out = "";
+  // signal arcs above the dome
+  out += '<path class="signal" d="M132 34 Q150 22 168 34"/><path class="signal" d="M122 26 Q150 8 178 26"/><path class="signal" d="M112 18 Q150 -6 188 18"/>';
+  // lower band, below the equator (static)
+  [[-90, -60], [-60, -30], [-30, 0], [0, 30], [30, 60], [60, 90]].forEach(([a, b]) => { out += '<polygon class="pan-static" points="' + quad(-21, 0, a, b) + '"/>'; });
+  // rim panels at the silhouette (static)
+  [[0, 30], [30, 60]].forEach(([l0, l1]) => {
+    out += '<polygon class="pan-static" points="' + quad(l0, l1, -90, -75) + '"/>';
+    out += '<polygon class="pan-static" points="' + quad(l0, l1, 75, 90) + '"/>';
+  });
+  out += '<polygon class="pan-static" points="' + quad(60, 90, -90, -75) + '"/><polygon class="pan-static" points="' + quad(60, 90, 75, 90) + '"/>';
+  // the 11 rule panels: bottom band (4), middle band (5), crown (2)
+  let i = 0;
+  const bands = [{ la: [0, 30], lo: [-75, -37.5, 0, 37.5, 75] }, { la: [30, 60], lo: [-75, -45, -15, 15, 45, 75] }, { la: [60, 90], lo: [-75, 0, 75] }];
+  bands.forEach((bd) => {
+    for (let k = 0; k < bd.lo.length - 1; k++) {
+      out += '<polygon class="pan" data-i="' + i + '" points="' + quad(bd.la[0], bd.la[1], bd.lo[k], bd.lo[k + 1]) + '"/>';
+      i++;
+    }
+  });
+  out += '<circle class="dome-edge" cx="' + cx + '" cy="' + cy + '" r="' + R + '"/>';
+  // base building hides the bottom of the sphere
+  out += '<rect class="dome-base" x="58" y="184" width="184" height="40" rx="3"/><rect class="dome-door" x="142" y="192" width="16" height="16" rx="2"/>';
+  svg.innerHTML = out;
+}
+
+MOD.radome = {
+  revealed: 1, done: false, built: false, seen: null, forgot: false,
+  enter() {
+    if (!this.built) { buildRadome(); this.built = true; }
+    this.done = false; this.revealed = 1; this.seen = new Set(); this.forgot = false;
+    $("pwd").value = ""; $("pwd2").value = ""; $("pwd").disabled = false; $("pwd2").disabled = false; $("pwdGlass").disabled = false;
+    $("confirmBox").hidden = true; $("radomeDone").hidden = true; $("pwdSubmit").disabled = false;
+    $("pwdMsg").textContent = "";
+    say("radomeAgent", "Choisissez quelque chose de simple. Il y aura juste quelques règles.");
+    this.update();
+  },
+  update() {
+    if (this.done) return;
+    const p = $("pwd").value;
+    const pass = RULES.map((r) => r.test(p));
+    let n = this.revealed;
+    while (n < RULES.length && pass.slice(0, n).every(Boolean)) n++;
+    let newest = null;
+    if (n > this.revealed) newest = RULES[n - 1];
+    this.revealed = n;
+    const html = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const r = RULES[i];
+      const isNew = !this.seen.has(r.id); this.seen.add(r.id);
+      html.push('<li class="rule ' + (pass[i] ? "ok" : "ko") + (isNew && i > 0 ? " new" : "") + '">' +
+        '<span class="rule-ico" aria-hidden="true">' + (pass[i] ? CHECK_SVG : CROSS_SVG) + "</span>" +
+        '<span class="rule-n">Règle ' + (i + 1) + (pass[i] ? " · respectée" : " · non respectée") + "</span>" +
+        '<span class="rule-txt">' + fr(r.txt(p)) + (r.extra ? r.extra() : "") + "</span></li>");
+    }
+    $("rules").innerHTML = html.join("");
+    const len = chars(p).length;
+    $("pwdCount").textContent = len + (len > 1 ? " caractères" : " caractère");
+    document.querySelectorAll("#radomeSvg .pan").forEach((el) => { const i = +el.dataset.i; el.classList.toggle("lit", i < n && pass[i]); });
+    const lit = pass.filter((v, i) => v && i < n).length;
+    $("radomeN").textContent = lit + " / " + RULES.length + " panneaux allumés";
+    const all = n === RULES.length && pass.every(Boolean);
+    $("radomeSvg").classList.toggle("all", all);
+    const wasHidden = $("confirmBox").hidden;
+    $("confirmBox").hidden = !all;
+    if (all && wasHidden) say("radomeAgent", "Le Radôme capte le signal. Plus qu'à confirmer. Sans copier-coller, évidemment. Le 🥂, lui, a droit à un bouton.");
+    else if (newest && newest.quip) say("radomeAgent", newest.quip);
+  },
+  insertGlass() {
+    const el = $("pwd2");   // only the confirmation field offers it: the first password has to be typed by hand
+    const s = el.selectionStart != null ? el.selectionStart : el.value.length;
+    const e = el.selectionEnd != null ? el.selectionEnd : el.value.length;
+    el.value = el.value.slice(0, s) + "🥂" + el.value.slice(e);
+    el.focus();
+    const pos = s + "🥂".length;
+    try { el.setSelectionRange(pos, pos); } catch (err) { /* ignore */ }
+  },
+  submit() {
+    const a = $("pwd").value, b = $("pwd2").value;
+    if (!b) { $("pwdMsg").textContent = "Retapez le mot de passe pour le confirmer."; $("pwdMsg").className = "form-msg err"; return; }
+    if (a !== b) {
+      $("pwdMsg").textContent = fr("Les deux mots de passe ne correspondent pas. Vérifiez les majuscules, les chiffres et le 🥂.");
+      $("pwdMsg").className = "form-msg err";
+      vibrate(80);
+      return;
+    }
+    this.done = true;
+    $("pwd").disabled = true; $("pwd2").disabled = true; $("pwdGlass").disabled = true; $("pwdSubmit").disabled = true;
+    $("pwdMsg").textContent = "";
+    $("radomeDone").hidden = false;
+    say("radomeAgent", "Étape 3 validée. C'était la dernière. Normalement.");
+    $("radomeNext").focus({ preventScroll: true });
+  }
+};
+$("pwd").addEventListener("input", () => MOD.radome.update());
+// "J'ai oublié": the whole check starts over from step 1, where the forgotten thing can be found again
+const OUBLIS = {
+  code: { titre: "CODE OUBLIÉ", msg: "Un code oublié, c'est une faille de sécurité. Toute la vérification est annulée : on reprend depuis l'étape 1." },
+  tonton: { titre: "TONTON OUBLIÉ", msg: "Oublier le tonton, c'est une faille de sécurité. Toute la vérification est annulée : on reprend depuis l'étape 1, là où il écrivait en majuscules." }
+};
+$("rules").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]");
+  if (!b || b.dataset.act !== "forgot") return;
+  const quoi = OUBLIS[b.dataset.what] ? b.dataset.what : "code";
+  glitch(OUBLIS[quoi].titre, OUBLIS[quoi].msg, "Tout recommencer", () => {
+    state.oubli = quoi;
+    go("peche");
+  });
+});
+$("pwdGlass").addEventListener("click", () => MOD.radome.insertGlass());
+["paste", "drop"].forEach((ev) => $("pwd2").addEventListener(ev, (e) => {
+  e.preventDefault();
+  toast("Le collage est désactivé pour votre sécurité.");
+  say("radomeAgent", "Oui, c'est pénible. Certaines banques le font vraiment.");
+}));
+$("pwd2").addEventListener("keydown", (e) => { if (e.key === "Enter") MOD.radome.submit(); });
+$("pwdSubmit").addEventListener("click", () => MOD.radome.submit());
+$("radomeNext").addEventListener("click", () => {
+  glitch("ÉTAPE 4 SUR 3", "Une vérification supplémentaire est nécessaire. Les robots savent maintenant choisir des mots de passe : prouvez que vous êtes humain.", "D'accord…", () => go("sudoku"));
+});
+
+/* ================= 4 · THE SUDOKU (interrupted after 3 digits) ================= */
+const SDK_SOL = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+const SDK_PUZ = "53.678..2" + "6.2195.4." + "198.4..6." + "85.76..23" + "4.6853..1" + "71.92.8.6" + "96.5..28." + ".8.419.35" + "3.5.86.79";
+const SDK_STOP_AFTER = 3;
+MOD.sudoku = {
+  vals: null, sel: -1, fills: 0, built: false, stopped: false,
+  enter() {
+    this.vals = SDK_PUZ.split("").map((ch) => (ch === "." ? "" : ch));
+    this.sel = SDK_PUZ.indexOf(".");
+    this.fills = 0; this.stopped = false;
+    if (!this.built) this.build();
+    this.render();
+    say("sudokuAgent", "Une grille facile. Vraiment facile. Prenez votre temps.");
+  },
+  build() {
+    const g = $("sdk");
+    let h = "";
+    for (let i = 0; i < 81; i++) {
+      const r = Math.floor(i / 9), c = i % 9;
+      const cls = [c === 2 || c === 5 ? "bc" : "", r === 2 || r === 5 ? "br" : "", c === 8 ? "lc" : "", r === 8 ? "lr" : ""].join(" ");
+      h += '<button type="button" class="' + cls + '" data-i="' + i + '"></button>';
+    }
+    g.innerHTML = h;
+    this.built = true;
+  },
+  peer(a, b) {
+    const ra = Math.floor(a / 9), ca = a % 9, rb = Math.floor(b / 9), cb = b % 9;
+    return ra === rb || ca === cb || (Math.floor(ra / 3) === Math.floor(rb / 3) && Math.floor(ca / 3) === Math.floor(cb / 3));
+  },
+  render() {
+    $("sdk").querySelectorAll("button").forEach((b) => {
+      const i = +b.dataset.i, giv = SDK_PUZ[i] !== ".", v = this.vals[i];
+      b.textContent = v;
+      b.classList.toggle("giv", giv);
+      b.classList.toggle("sel", i === this.sel);
+      b.classList.toggle("peer", this.sel >= 0 && i !== this.sel && this.peer(i, this.sel));
+      b.classList.toggle("bad", !giv && !!v && v !== SDK_SOL[i]);
+      b.setAttribute("aria-label", "Ligne " + (Math.floor(i / 9) + 1) + ", colonne " + (i % 9 + 1) + (v ? ", " + v : ", vide"));
+    });
+  },
+  select(i) { if (this.stopped || SDK_PUZ[i] !== ".") return; this.sel = i; this.render(); },
+  move(dx, dy) {
+    if (this.sel < 0) return;
+    let r = Math.floor(this.sel / 9), c = this.sel % 9;
+    for (let n = 0; n < 9; n++) {
+      r += dy; c += dx;
+      if (r < 0 || r > 8 || c < 0 || c > 8) return;
+      if (SDK_PUZ[r * 9 + c] === ".") { this.select(r * 9 + c); return; }
+    }
+  },
+  put(d) {
+    if (this.stopped || this.sel < 0 || SDK_PUZ[this.sel] !== ".") return;
+    this.vals[this.sel] = d;
+    this.render();
+    if (!d) return;
+    this.fills++;
+    if (this.fills >= SDK_STOP_AFTER) this.interrupt();
+  },
+  interrupt() {
+    this.stopped = true;
+    setTimeout(() => {
+      if (state.screen !== "sudoku") return;
+      glitch("INTERRUPTION", "Non mais attendez… Il est en train de se faire un sudoku, là ?! On n'a plus le temps pour ça, le champagne tiédit.", "Passer à la suite", () => go("mots"), { goeland: true });
+    }, 650);
+  }
+};
+$("sdk").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) MOD.sudoku.select(+b.dataset.i); });
+$("keypad").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) MOD.sudoku.put(b.dataset.d); });
+
+/* ================= 5 · THE CROSSWORD ================= */
+const CW = {
+  W: 7, H: 6,
+  words: [
+    { ans: "LES", show: "LES", r: 5, c: 3, dir: "h", clue: "Article défini pluriel : ___ huîtres de Tonton Yann." },
+    { ans: "MOTS", show: "MOTS", r: 0, c: 6, dir: "v", clue: "Ils se croisent dans cette grille." },
+    { ans: "DE", show: "DE", r: 3, c: 0, dir: "h", clue: "Préposition : le phare ___ Mean Ruz." },
+    { ans: "PASSE", show: "PASSE", r: 1, c: 4, dir: "v", clue: "« Je ___ », dit le joueur de belote qui ne prend pas." },
+    { ans: "CEST", show: "C'EST", r: 2, c: 1, dir: "v", clue: "« ___ la fête ! » (sans l'apostrophe)" },
+    { ans: "CHIANT", show: "CHIANT", r: 2, c: 1, dir: "h", clue: "Familier : très pénible. Comme cette vérification." }
+  ]
+};
+MOD.mots = {
+  built: false, cells: {}, active: 0, done: false, solved: [],
+  key(r, c) { return r + "," + c; },
+  wordKeys(wi) {
+    const w = CW.words[wi], out = [];
+    for (let k = 0; k < w.ans.length; k++) out.push(this.key(w.r + (w.dir === "v" ? k : 0), w.c + (w.dir === "h" ? k : 0)));
+    return out;
+  },
+  input(key) { const [r, c] = key.split(","); return $("cw-" + r + "-" + c); },
+  build() {
+    CW.words.forEach((w, wi) => {
+      this.wordKeys(wi).forEach((key, k) => {
+        const [r, c] = key.split(",").map(Number);
+        const cell = this.cells[key] || (this.cells[key] = { r, c, ans: w.ans[k], words: [], nums: [] });
+        if (cell.ans !== w.ans[k]) console.error("Grille incohérente en", key);
+        cell.words.push(wi);
+        if (k === 0) cell.nums.push(wi + 1);
+      });
+    });
+    let h = "";
+    for (let r = 0; r < CW.H; r++) {
+      for (let c = 0; c < CW.W; c++) {
+        const cell = this.cells[this.key(r, c)];
+        if (!cell) { h += '<div class="cw-void"></div>'; continue; }
+        h += '<div class="cw-cell" data-k="' + r + "," + c + '">' + (cell.nums.length ? '<span class="cw-n">' + cell.nums.join("·") + "</span>" : "") +
+          '<input id="cw-' + r + "-" + c + '" data-k="' + r + "," + c + '" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" aria-label="Case ligne ' + (r + 1) + ", colonne " + (c + 1) + '"></div>';
+      }
+    }
+    $("cw").innerHTML = h;
+    $("clues").innerHTML = CW.words.map((w, wi) =>
+      '<li><button type="button" class="clue" data-w="' + wi + '"><span class="clue-n">' + (wi + 1) + " " + (w.dir === "h" ? "→" : "↓") + "</span><span>" + esc(fr(w.clue)) + " <i>(" + w.ans.length + ")</i></span></button></li>").join("");
+    this.built = true;
+  },
+  enter() {
+    if (!this.built) this.build();
+    this.done = false; this.solved = CW.words.map(() => false);
+    Object.keys(this.cells).forEach((k) => { const el = this.input(k); el.value = ""; el.disabled = false; });
+    $("motsDone").hidden = true;
+    this.setActive(0, false);
+    this.update();
+    say("motsAgent", "Six mots, six définitions. Le message final vient directement du service de sécurité.");
+  },
+  setActive(wi, focus) {
+    this.active = wi;
+    const keys = this.wordKeys(wi);
+    document.querySelectorAll("#cw .cw-cell").forEach((el) => el.classList.toggle("on", keys.indexOf(el.dataset.k) !== -1));
+    document.querySelectorAll("#clues .clue").forEach((el) => el.classList.toggle("on", +el.dataset.w === wi));
+    const w = CW.words[wi];
+    $("cwBar").querySelector("b").textContent = (wi + 1) + " " + (w.dir === "h" ? "→" : "↓");
+    $("cwBar").querySelector("span").textContent = fr(w.clue);
+    if (focus) {
+      const target = keys.find((k) => !this.input(k).value) || keys[0];
+      this.input(target).focus({ preventScroll: true });
+    }
+  },
+  onFocus(key) {
+    const cell = this.cells[key];
+    if (cell.words.indexOf(this.active) === -1) this.setActive(cell.words[0], false);
+  },
+  toggle(key) {
+    const cell = this.cells[key];
+    if (cell.words.length < 2) return;
+    this.setActive(cell.words[(cell.words.indexOf(this.active) + 1) % cell.words.length], false);
+  },
+  step(key, delta) {
+    const keys = this.wordKeys(this.active), k = keys.indexOf(key);
+    const nk = keys[k + delta];
+    return nk || null;
+  },
+  type(key, raw) {
+    const el = this.input(key);
+    const letter = norm(raw).toUpperCase().replace(/[^A-Z]/g, "").slice(-1);
+    el.value = letter;
+    if (letter) { const nk = this.step(key, 1); if (nk) this.input(nk).focus({ preventScroll: true }); }
+    this.update();
+  },
+  back(key) {
+    const el = this.input(key);
+    if (el.value) { el.value = ""; this.update(); return; }
+    const pk = this.step(key, -1);
+    if (pk) { const p = this.input(pk); p.value = ""; p.focus({ preventScroll: true }); this.update(); }
+  },
+  arrow(key, dx, dy) {
+    const [r, c] = key.split(",").map(Number);
+    const nk = this.key(r + dy, c + dx);
+    if (!this.cells[nk]) return;
+    const dir = dx ? "h" : "v";
+    const cell = this.cells[nk];
+    const wi = cell.words.find((i) => CW.words[i].dir === dir);
+    if (wi !== undefined) this.setActive(wi, false);
+    this.input(nk).focus({ preventScroll: true });
+  },
+  update() {
+    CW.words.forEach((w, wi) => { this.solved[wi] = this.wordKeys(wi).every((k) => this.input(k).value === this.cells[k].ans); });
+    Object.keys(this.cells).forEach((k) => {
+      const ok = this.cells[k].words.some((wi) => this.solved[wi]);
+      this.input(k).parentNode.classList.toggle("ok", ok);
+    });
+    document.querySelectorAll("#clues .clue").forEach((el) => el.classList.toggle("ok", this.solved[+el.dataset.w]));
+    $("phrase").innerHTML = CW.words.map((w, wi) => '<span class="phrase-w' + (this.solved[wi] ? " ok" : "") + '">' +
+      w.show.split("").map((ch) => ch === "'" ? '<span class="apo">\'</span>' : "<span>" + (this.solved[wi] ? ch : "") + "</span>").join("") + "</span>").join("");
+    if (!this.done && this.solved.every(Boolean)) this.finish();
+  },
+  finish() {
+    this.done = true;
+    Object.keys(this.cells).forEach((k) => { this.input(k).disabled = true; });
+    $("motsDone").hidden = false;
+    say("motsAgent", "Le service de sécurité n'aurait pas mieux dit.");
+    setTimeout(() => { $("motsNext").focus({ preventScroll: true }); $("motsDone").scrollIntoView({ block: "center", behavior: REDUCED ? "auto" : "smooth" }); }, 80);
+  }
+};
+(() => {
+  const grid = $("cw");
+  let wasFocused = null;
+  grid.addEventListener("pointerdown", (e) => { const el = e.target.closest("input"); wasFocused = el && document.activeElement === el ? el : null; });
+  grid.addEventListener("click", (e) => { const el = e.target.closest("input"); if (el && wasFocused === el) MOD.mots.toggle(el.dataset.k); });
+  grid.addEventListener("focusin", (e) => { const el = e.target.closest("input"); if (el) { MOD.mots.onFocus(el.dataset.k); try { el.select(); } catch (err) { /* ignore */ } } });
+  grid.addEventListener("input", (e) => { const el = e.target.closest("input"); if (el) MOD.mots.type(el.dataset.k, el.value); });
+  grid.addEventListener("keydown", (e) => {
+    const el = e.target.closest("input"); if (!el) return;
+    const k = el.dataset.k;
+    if (e.key === "Backspace") { e.preventDefault(); MOD.mots.back(k); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); MOD.mots.arrow(k, -1, 0); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); MOD.mots.arrow(k, 1, 0); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); MOD.mots.arrow(k, 0, -1); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); MOD.mots.arrow(k, 0, 1); }
+    else if (e.key === "Enter") { e.preventDefault(); MOD.mots.setActive((MOD.mots.active + 1) % CW.words.length, true); }
+  });
+  $("clues").addEventListener("click", (e) => { const b = e.target.closest(".clue"); if (b) MOD.mots.setActive(+b.dataset.w, true); });
+})();
+$("motsNext").addEventListener("click", () => {
+  glitch("SESSION EXPIRÉE",
+    "Votre session a expiré pendant que vous choisissiez votre mot de passe. <b>SI VOUS N'AVIEZ PAS PRIS TOUT VOTRE TEMPS…</b> Pour la récupérer, survivez 30 secondes à la tempête de pop-ups qui se lève sur la côte. Fermez chaque fenêtre avec sa petite croix, jamais avec le gros bouton. À six fenêtres ouvertes, votre session coule.",
+    "Affronter la tempête", () => go("tempete"));
+});
+
+/* ================= 6 · THE POP-UP STORM ================= */
+// Difficulty knobs
+const STORM = { DUR: 30000, LIMIT: 6, START_IV: 1150, END_IV: 480, DOUBLE_AFTER: 18000, DOUBLE_P: 0.14, SHY_AFTER: 8000, SHY_P: 0.18, ASSIST_AFTER: 3, ASSIST_SLOW: 1.3 };
+const POPS = [
+  { t: "Félicitations !", m: "Vous êtes le 1 000 000e invité du réveillon. Un cadeau vous attend.", b: "Réclamer mon cadeau" },
+  { t: "Alerte virus", m: "Votre téléphone est infecté par 31 virus.", b: "Nettoyer maintenant" },
+  { t: "Mise à jour", m: "Flash Player doit être mis à jour pour afficher le réveillon.", b: "Mettre à jour" },
+  { t: "Cookies", m: "Ce réveillon utilise des cookies. Et des crêpes.", b: "Tout accepter" },
+  { t: "Colis en attente", m: "Votre colis « Champagne x6 » attend une confirmation.", b: "Suivre le colis" },
+  { t: "Tonton Yann", m: "VOUS A ENVOYÉ UN FICHIER : HUITRES.EXE", b: "Ouvrir" },
+  { t: "Session", m: "Votre session expire dans 3 secondes.", b: "Prolonger" },
+  { t: "Jeu concours", m: "Gagnez une croisière aux Sept-Îles.", b: "Participer" },
+  { t: "Notifications", m: "Le Goéland souhaite vous envoyer des notifications.", b: "Autoriser" },
+  { t: "Sécurité", m: "Votre mot de passe est trop faible.", b: "Le changer" },
+  { t: "Fermer ?", m: "Voulez-vous fermer cette fenêtre ?", b: "Fermer" },
+  { t: "Bonne affaire", m: "Des crêpes gratuites à 200 m de chez vous.", b: "J'en veux" },
+  { t: "Vérification", m: "Confirmez votre identité pour continuer.", b: "Me connecter" },
+  { t: "Sondage", m: "Êtes-vous satisfait de cette tempête ?", b: "Répondre" }
+];
+MOD.tempete = {
+  running: false, count: 0, z: 20, t0: 0, raf: 0, spawnT: 0, cdT: [], fails: 0, tries: 0, limit: STORM.LIMIT, assisted: false, deck: [], di: 0,
+  enter() {
+    this.stopAll(); this.clearPops(); this.count = 0;
+    this.assisted = this.fails >= STORM.ASSIST_AFTER;
+    this.limit = this.assisted ? STORM.LIMIT + 1 : STORM.LIMIT;
+    $("storm").classList.remove("sunk");
+    $("stormIdle").hidden = false; $("stormCount").hidden = true;
+    $("stormLost").hidden = true; $("stormWon").hidden = true;
+    $("stormLimitTxt").textContent = this.assisted ? "sept" : "six";
+    this.hud(STORM.DUR);
+    say("tempeteAgent", this.assisted
+      ? "J'ai demandé au vent de souffler moins fort, et vous avez droit à une fenêtre de plus. Ne le dites à personne."
+      : "Petite croix, jamais le gros bouton. Et méfiez-vous des fenêtres timides.");
+  },
+  leave() { this.stopAll(); },
+  stopAll() {
+    this.running = false;
+    clearTimeout(this.spawnT);
+    this.cdT.forEach(clearTimeout); this.cdT = [];
+    cancelAnimationFrame(this.raf); this.raf = 0;
+  },
+  clearPops() { $("storm").querySelectorAll(".pop").forEach((p) => p.remove()); },
+  start() {
+    this.stopAll(); this.clearPops(); this.count = 0; this.z = 20;
+    this.tries++; state.stats.tempete = this.tries;
+    this.assisted = this.fails >= STORM.ASSIST_AFTER;
+    this.limit = this.assisted ? STORM.LIMIT + 1 : STORM.LIMIT;
+    $("stormLimitTxt").textContent = this.assisted ? "sept" : "six";
+    $("storm").classList.remove("sunk");
+    $("stormIdle").hidden = true; $("stormLost").hidden = true; $("stormWon").hidden = true;
+    this.hud(STORM.DUR);
+    this.deck = shuffle(POPS.slice()); this.di = 0;
+    $("storm").scrollIntoView({ block: "center", behavior: REDUCED ? "auto" : "smooth" });
+    const cd = $("stormCount");
+    cd.hidden = false;
+    [3, 2, 1].forEach((n, i) => this.cdT.push(setTimeout(() => { cd.textContent = n; }, i * 650)));
+    this.cdT.push(setTimeout(() => { cd.hidden = true; this.run(); }, 3 * 650));
+  },
+  run() {
+    this.running = true;
+    this.t0 = performance.now();
+    this.spawn(); this.spawn();
+    this.next();
+    const f = () => { if (!this.running) return; this.tick(); if (this.running) this.raf = requestAnimationFrame(f); };
+    this.raf = requestAnimationFrame(f);
+  },
+  elapsed() { return performance.now() - this.t0; },
+  next() {
+    const k = Math.min(1, this.elapsed() / STORM.DUR);
+    let iv = STORM.START_IV + (STORM.END_IV - STORM.START_IV) * k;
+    if (this.assisted) iv *= STORM.ASSIST_SLOW;
+    iv *= rand(0.85, 1.15);
+    this.spawnT = setTimeout(() => {
+      if (!this.running) return;
+      this.spawn();
+      if (this.running && this.elapsed() > STORM.DOUBLE_AFTER && Math.random() < STORM.DOUBLE_P) this.spawn();
+      if (this.running) this.next();
+    }, iv);
+  },
+  spawn() {
+    if (!this.running) return;
+    const a = $("storm"), W = a.clientWidth, H = a.clientHeight;
+    const d = this.deck[this.di++ % this.deck.length];
+    const el = document.createElement("div");
+    el.className = "pop " + ["", "pc-co", "pc-ar", "pc-al"][Math.floor(Math.random() * 4)];
+    if (this.elapsed() > STORM.SHY_AFTER && Math.random() < STORM.SHY_P) el.dataset.shy = "1";
+    const w = Math.round(Math.min(250, W * 0.7));
+    el.style.width = w + "px";
+    el.innerHTML = '<div class="pop-bar"><span class="pop-title">' + esc(d.t) + '</span><button type="button" class="pop-x" aria-label="Fermer la fenêtre">×</button></div>' +
+      '<div class="pop-body"><p class="pop-msg">' + esc(fr(d.m)) + '</p><button type="button" class="pop-trap">' + esc(d.b) + "</button></div>";
+    el.style.zIndex = ++this.z;
+    el.style.left = Math.round(rand(6, Math.max(6, W - w - 6))) + "px";
+    el.style.top = "0px"; el.style.visibility = "hidden";
+    a.appendChild(el);
+    el.style.top = Math.round(rand(6, Math.max(6, H - el.offsetHeight - 6))) + "px";
+    el.style.visibility = "";
+    this.count++;
+    this.hud();
+    if (this.count >= this.limit) this.lose();
+  },
+  close(el) {
+    if (!this.running || !el || el.classList.contains("closing")) return;
+    if (el.dataset.shy === "1") { el.dataset.shy = "0"; el.classList.add("fled"); return; } // the shy window's cross runs to the other side once
+    el.classList.add("closing");
+    setTimeout(() => el.remove(), 130);
+    this.count--;
+    this.hud();
+  },
+  trap() {
+    if (!this.running) return;
+    vibrate(90);
+    const a = $("storm"); a.classList.remove("shake"); void a.offsetWidth; a.classList.add("shake");
+    toast("Jamais le gros bouton !");
+    say("tempeteAgent", "Le gros bouton ouvre toujours d'autres fenêtres. C'est son métier.");
+    this.spawn(); this.spawn();
+  },
+  tick() {
+    const left = Math.max(0, STORM.DUR - this.elapsed());
+    this.hud(left);
+    if (left <= 0) this.win();
+  },
+  hud(left) {
+    if (left != null) {
+      $("stormTime").textContent = (left / 1000).toFixed(1).replace(".", ",") + " s";
+      $("stormBar").style.transform = "scaleX(" + (left / STORM.DUR).toFixed(4) + ")";
+    }
+    $("stormOpen").textContent = this.count + " / " + this.limit;
+    $("stormDots").innerHTML = Array.from({ length: this.limit }, (_, i) => "<i" + (i < this.count ? ' class="on"' : "") + "></i>").join("");
+  },
+  win() {
+    this.stopAll();
+    $("storm").querySelectorAll(".pop").forEach((p) => p.classList.add("closing"));
+    setTimeout(() => this.clearPops(), 200);
+    this.count = 0; this.hud(0);
+    $("stormWon").hidden = false;
+    say("tempeteAgent", "Tempête passée. Même le Goéland a eu le mal de mer.");
+    setTimeout(() => $("stormNext").focus({ preventScroll: true }), 60);
+  },
+  lose() {
+    const t = this.elapsed();
+    this.stopAll();
+    this.fails++;
+    $("storm").classList.add("sunk");
+    vibrate([80, 50, 80]);
+    const left = STORM.ASSIST_AFTER - this.fails;
+    $("stormLostTxt").textContent = fr(this.limit + " fenêtres ouvertes au bout de " + (t / 1000).toFixed(1).replace(".", ",") + " s sur 30." +
+      (left === 1 ? " Encore un échec et le Goéland calme le vent." : left === 0 ? " Le Goéland va calmer le vent." : ""));
+    $("stormLost").hidden = false;
+    const lines = [
+      "Les fenêtres arrivent de plus en plus vite. Gardez de la marge au début.",
+      "Fermez d'abord celles du dessus : elles cachent les croix des autres.",
+      "D'accord, d'accord. Je calme le vent pour la prochaine."
+    ];
+    say("tempeteAgent", lines[Math.min(this.fails - 1, lines.length - 1)]);
+    setTimeout(() => $("stormRetry").focus({ preventScroll: true }), 60);
+  }
+};
+(() => {
+  const a = $("storm");
+  const act = (target) => {
+    const x = target.closest(".pop-x"), t = target.closest(".pop-trap");
+    if (x) MOD.tempete.close(x.closest(".pop"));
+    else if (t) MOD.tempete.trap();
+    return !!(x || t);
+  };
+  a.addEventListener("pointerdown", (e) => { if (act(e.target)) e.preventDefault(); });
+  a.addEventListener("click", (e) => { if (e.detail === 0) act(e.target); }); // keyboard activation
+})();
+$("stormGo").addEventListener("click", () => MOD.tempete.start());
+$("stormRetry").addEventListener("click", () => MOD.tempete.start());
+$("stormNext").addEventListener("click", () => go("fin"));
+
+/* ================= MAZE (not in the sequence) ================= */
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const DIRS = [[0, -1, "n", "s"], [1, 0, "e", "w"], [0, 1, "s", "n"], [-1, 0, "w", "e"]];
+const LIGHT = 2.6;
+
+MOD.sentier = {
+  C: 9, R: 11, cells: null, pos: { x: 0, y: 0 }, seen: new Set(), trail: new Set(), gateOpen: false, doors: [], exit: null,
+  busy: false, done: false, raf: 0, runT: 0, ctx: null, col: null, sentBackHello: false,
+  at(x, y) { return x < 0 || y < 0 || x >= this.C || y >= this.R ? null : this.cells[y * this.C + x]; },
+  build() {
+    const rnd = mulberry32(20261231);
+    const C = this.C, R = this.R;
+    const cells = [];
+    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) cells.push({ x, y, w: { n: 1, e: 1, s: 1, w: 1 }, v: false });
+    this.cells = cells;
+    const stack = [cells[0]]; cells[0].v = true;
+    while (stack.length) {
+      const c = stack[stack.length - 1];
+      const nb = DIRS.map(([dx, dy, a, b]) => ({ n: this.at(c.x + dx, c.y + dy), a, b })).filter((o) => o.n && !o.n.v);
+      if (!nb.length) { stack.pop(); continue; }
+      const o = nb[Math.floor(rnd() * nb.length)];
+      c.w[o.a] = 0; o.n.w[o.b] = 0; o.n.v = true; stack.push(o.n);
+    }
+    // distances from the start, to place the decoy doors on dead ends
+    const dist = new Array(C * R).fill(-1); dist[0] = 0;
+    const q = [0];
+    while (q.length) {
+      const i = q.shift(), c = cells[i];
+      DIRS.forEach(([dx, dy, w]) => { if (c.w[w]) return; const j = (c.y + dy) * C + (c.x + dx); if (dist[j] < 0) { dist[j] = dist[i] + 1; q.push(j); } });
+    }
+    this.exit = { x: C - 1, y: R - 1 };
+    const isExit = (c) => c.x === this.exit.x && c.y === this.exit.y;
+    const deads = cells.filter((c) => c.w.n + c.w.e + c.w.s + c.w.w === 3 && (c.x || c.y) && !isExit(c));
+    const maxD = Math.max.apply(null, dist);
+    const pick = (target, avoid) => deads.filter((c) => avoid.indexOf(c) === -1 && dist[c.y * C + c.x] > 4)
+      .sort((a, b) => Math.abs(dist[a.y * C + a.x] - target) - Math.abs(dist[b.y * C + b.x] - target))[0];
+    const d1 = pick(maxD * 0.4, []);
+    const d2 = pick(maxD * 0.75, [d1]);
+    this.doors = [];
+    if (d1) this.doors.push({ x: d1.x, y: d1.y, kind: "oubli" });
+    if (d2) this.doors.push({ x: d2.x, y: d2.y, kind: "support" });
+  },
+  enter() {
+    if (!this.cells) this.build();
+    this.col = {
+      fog: tok("--fog"), floor: tok("--sentier-dim"), floorLit: tok("--sentier"), wall: tok("--granit"), wallDim: tok("--granit-sombre"),
+      or: tok("--or"), soleil: tok("--soleil"), abysse: tok("--abysse"), brume: tok("--brume"), door: tok("--nuit-2")
+    };
+    this.done = false; this.busy = false;
+    $("sentierDone").hidden = true; $("mazeControls").hidden = false;
+    this.gateOpen = state.mazeLoops >= 1;
+    $("mazeLoops").textContent = state.mazeLoops;
+    this.resetRun();
+    this.size();
+    this.hint();
+    this.loop();
+  },
+  leave() { cancelAnimationFrame(this.raf); this.raf = 0; clearInterval(this.runT); },
+  resetRun() { this.pos = { x: 0, y: 0 }; this.seen = new Set(); this.trail = new Set(); this.reveal(); },
+  reveal() {
+    const P = this.pos;
+    this.cells.forEach((c, i) => { if (Math.hypot(c.x - P.x, c.y - P.y) <= LIGHT) this.seen.add(i); });
+    this.trail.add(P.y * this.C + P.x);
+    $("maze").setAttribute("aria-label", "Labyrinthe : vous êtes ligne " + (P.y + 1) + ", colonne " + (P.x + 1) + ". Sortie en bas à droite.");
+  },
+  step(dx, dy) {
+    if (this.busy || this.done || state.screen !== "sentier") return false;
+    const dir = dx === 1 ? "e" : dx === -1 ? "w" : dy === 1 ? "s" : "n";
+    const P = this.pos, c = this.at(P.x, P.y);
+    if (P.x === 0 && P.y === 0 && dir === "n") { this.tryGate(); return false; }
+    if (c.w[dir]) { vibrate(10); return false; }
+    this.pos = { x: P.x + dx, y: P.y + dy };
+    this.reveal();
+    const d = this.doors.find((o) => o.x === this.pos.x && o.y === this.pos.y);
+    if (d) { this.door(d.kind); return false; }
+    if (this.pos.x === this.exit.x && this.pos.y === this.exit.y) { this.door("sortie"); return false; }
+    return true;
+  },
+  run(dx, dy) {
+    clearInterval(this.runT);
+    const ahead = dx === 1 ? "e" : dx === -1 ? "w" : dy === 1 ? "s" : "n";
+    const perp = dx ? ["n", "s"] : ["e", "w"];
+    const tick = () => {
+      if (!this.step(dx, dy)) return false;
+      const c = this.at(this.pos.x, this.pos.y);
+      return !(c.w[ahead] || perp.some((p) => !c.w[p]));
+    };
+    if (!tick()) return;
+    let n = 0;
+    this.runT = setInterval(() => { if (!tick() || ++n > 40) clearInterval(this.runT); }, 55);
+  },
+  tryGate() {
+    if (this.gateOpen) { this.win(); return; }
+    vibrate(30);
+    say("sentierAgent", "La porte d'entrée s'est refermée derrière vous. Logique, vous êtes déjà entré.");
+  },
+  door(kind) {
+    this.busy = true; clearInterval(this.runT);
+    const T = {
+      oubli: ["MOT DE PASSE OUBLIÉ", "Un lien de réinitialisation a été envoyé à votre adresse de secours. Celle que vous avez oubliée en 2014. Retour au point de départ."],
+      support: ["SUPPORT", "Tous nos conseillers sont occupés. Temps d'attente estimé : 31 décembre, 23h59. Retour au point de départ."],
+      sortie: ["SESSION EXPIRÉE", "Vous avez mis trop de temps à trouver la sortie. Par sécurité, retour au point de départ."]
+    }[kind];
+    state.mazeLoops++;
+    $("mazeLoops").textContent = state.mazeLoops;
+    if (kind === "sortie" && state.mazeEnd === "debut" && !state.mazeSentBack) {
+      state.mazeSentBack = true;
+      this.sentBackHello = true;
+      glitch("SESSION EXPIRÉE", "Par sécurité, la vérification reprend depuis le début. Depuis le tout début.", "Recommencer", () => go("peche"));
+      return;
+    }
+    glitch(T[0], T[1], "Retour au départ", () => {
+      this.resetRun(); this.gateOpen = true; this.busy = false; this.hint(); $("maze").focus({ preventScroll: true });
+    });
+  },
+  hint() {
+    const L = state.mazeLoops;
+    let t;
+    if (this.sentBackHello) { this.sentBackHello = false; t = "Re-bonjour. Vous connaissez déjà ce sentier. La porte d'entrée, elle, est restée ouverte."; }
+    else if (L === 0) t = "Suivez le sentier jusqu'à la sortie. La lueur dorée, en bas à droite, c'est elle.";
+    else if (L === 1) t = "Retour à la case départ. Ne vous inquiétez pas, c'est la procédure.";
+    else if (L === 2) t = "Encore ? Cette procédure a été conçue par le service client de votre box internet.";
+    else if (L === 3) t = "Indice officiel : on sort toujours par où on est entré.";
+    else t = "Bon. Revenez au départ, tout en haut à gauche, et ressortez par la porte d'entrée. Elle est ouverte.";
+    say("sentierAgent", t);
+  },
+  win() {
+    this.done = true; clearInterval(this.runT);
+    this.pos = { x: 0, y: -1 };
+    $("sentierDone").hidden = false; $("mazeControls").hidden = true;
+    say("sentierAgent", "Voilà. Vous êtes sorti en revenant au début. Je n'ai rien dit, vous avez trouvé tout seul.");
+    setTimeout(() => $("sentierNext").focus({ preventScroll: true }), 60);
+  },
+  size() {
+    const wrap = $("mazeWrap");
+    const w = Math.min(wrap.clientWidth - 12, 420);
+    const cs = Math.max(18, Math.floor(w / this.C));
+    this.cs = cs;
+    this.ox = Math.floor((w - cs * this.C) / 2);
+    this.oy = Math.round(cs * 0.62);
+    const h = this.oy + cs * this.R + Math.round(cs * 0.8);
+    const d = Math.min(2, window.devicePixelRatio || 1);
+    const cv = $("maze");
+    cv.style.width = w + "px"; cv.style.height = h + "px";
+    cv.width = Math.round(w * d); cv.height = Math.round(h * d);
+    this.ctx = cv.getContext("2d");
+    this.ctx.setTransform(d, 0, 0, d, 0, 0);
+    this.W = w; this.H = h;
+  },
+  loop() {
+    const f = (t) => {
+      if (state.screen !== "sentier") { this.raf = 0; return; }
+      this.draw(t);
+      this.raf = requestAnimationFrame(f);
+    };
+    if (!this.raf) this.raf = requestAnimationFrame(f);
+  },
+  draw(t) {
+    const ctx = this.ctx; if (!ctx) return;
+    const { cs, ox, oy, C, R } = this, P = this.pos, K = this.col;
+    const pulse = REDUCED ? 0.5 : (Math.sin((t || 0) / 450) + 1) / 2;
+    ctx.clearRect(0, 0, this.W, this.H);
+    ctx.fillStyle = K.fog; ctx.fillRect(ox, oy, cs * C, cs * R);
+    const lit = (c) => P.y >= 0 && Math.hypot(c.x - P.x, c.y - P.y) <= LIGHT;
+    // floors
+    this.cells.forEach((c, i) => {
+      if (!this.seen.has(i)) return;
+      ctx.fillStyle = lit(c) ? K.floorLit : K.floor;
+      ctx.fillRect(ox + c.x * cs, oy + c.y * cs, cs + 0.5, cs + 0.5);
+    });
+    // breadcrumbs
+    ctx.fillStyle = K.soleil; ctx.globalAlpha = 0.4;
+    this.trail.forEach((i) => {
+      const c = this.cells[i]; if (c.x === P.x && c.y === P.y) return;
+      ctx.beginPath(); ctx.arc(ox + (c.x + 0.5) * cs, oy + (c.y + 0.5) * cs, Math.max(1.5, cs * 0.06), 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    // lantern glow
+    if (P.y >= 0) {
+      const gx = ox + (P.x + 0.5) * cs, gy = oy + (P.y + 0.5) * cs;
+      const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, cs * 3);
+      g.addColorStop(0, hexA(K.soleil, 0.16)); g.addColorStop(1, hexA(K.soleil, 0));
+      ctx.fillStyle = g; ctx.fillRect(ox, oy, cs * C, cs * R);
+    }
+    // walls (pink granite)
+    ctx.lineCap = "round"; ctx.lineWidth = Math.max(2, cs * 0.13);
+    this.cells.forEach((c, i) => {
+      if (!this.seen.has(i)) return;
+      ctx.strokeStyle = lit(c) ? K.wall : K.wallDim;
+      const x0 = ox + c.x * cs, y0 = oy + c.y * cs, x1 = x0 + cs, y1 = y0 + cs;
+      ctx.beginPath();
+      if (c.w.n && (c.x || c.y)) { ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); }
+      if (c.w.e) { ctx.moveTo(x1, y0); ctx.lineTo(x1, y1); }
+      if (c.w.s && !(c.x === this.exit.x && c.y === this.exit.y)) { ctx.moveTo(x0, y1); ctx.lineTo(x1, y1); }
+      if (c.w.w) { ctx.moveTo(x0, y0); ctx.lineTo(x0, y1); }
+      ctx.stroke();
+    });
+    // exit beacon, visible through the fog
+    const ex = ox + (this.exit.x + 0.5) * cs, ey = oy + (this.exit.y + 0.5) * cs, er = cs * (1.1 + pulse * 0.5);
+    const gr = ctx.createRadialGradient(ex, ey, 0, ex, ey, er);
+    gr.addColorStop(0, hexA(K.or, 0.6)); gr.addColorStop(1, hexA(K.or, 0));
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(ex, ey, er, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = K.or; ctx.beginPath(); ctx.arc(ex, ey, cs * 0.2, 0, Math.PI * 2); ctx.fill();
+    ctx.font = "600 " + Math.max(10, Math.round(cs * 0.3)) + "px " + FONT_MONO;
+    ctx.textBaseline = "middle"; ctx.textAlign = "right"; ctx.fillStyle = K.or;
+    ctx.fillText("SORTIE", ox + C * cs, oy + R * cs + cs * 0.45);
+    // decoy doors
+    this.doors.forEach((d) => {
+      if (!this.seen.has(d.y * C + d.x)) return;
+      const dx = ox + (d.x + 0.5) * cs, dy = oy + (d.y + 0.5) * cs;
+      ctx.fillStyle = K.door; ctx.strokeStyle = K.brume; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(dx, dy, cs * 0.32, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = K.brume; ctx.textAlign = "center";
+      ctx.font = "700 " + Math.round(cs * 0.36) + "px " + FONT_MONO;
+      ctx.fillText(d.kind === "oubli" ? "?" : "@", dx, dy + 1);
+    });
+    // entrance gate
+    const gx0 = ox, gx1 = ox + cs, gy = oy;
+    ctx.strokeStyle = K.or; ctx.lineWidth = Math.max(2, cs * 0.1);
+    ctx.beginPath(); ctx.moveTo(gx0, gy); ctx.lineTo(gx0, gy - cs * 0.42); ctx.moveTo(gx1, gy); ctx.lineTo(gx1, gy - cs * 0.42); ctx.stroke();
+    if (!this.gateOpen) {
+      ctx.lineWidth = Math.max(1.5, cs * 0.06);
+      ctx.beginPath();
+      for (let k = 1; k < 4; k++) { const x = gx0 + k * cs / 4; ctx.moveTo(x, gy); ctx.lineTo(x, gy - cs * 0.38); }
+      ctx.moveTo(gx0, gy - cs * 0.2); ctx.lineTo(gx1, gy - cs * 0.2);
+      ctx.stroke();
+    } else if (state.mazeLoops >= 3 && !this.done) {
+      ctx.globalAlpha = state.mazeLoops >= 4 ? 0.35 + 0.65 * pulse : 0.55;
+      const ax = gx0 + cs / 2;
+      ctx.lineWidth = Math.max(2, cs * 0.08);
+      ctx.beginPath(); ctx.moveTo(ax, gy - cs * 0.05); ctx.lineTo(ax, gy - cs * 0.42);
+      ctx.moveTo(ax - cs * 0.14, gy - cs * 0.28); ctx.lineTo(ax, gy - cs * 0.42); ctx.lineTo(ax + cs * 0.14, gy - cs * 0.28);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    ctx.font = "600 " + Math.max(10, Math.round(cs * 0.28)) + "px " + FONT_MONO;
+    ctx.textAlign = "left"; ctx.fillStyle = this.gateOpen ? K.or : K.brume;
+    ctx.fillText(this.gateOpen ? "ENTRÉE (OUVERTE)" : "ENTRÉE", gx1 + 8, gy - cs * 0.22);
+    // player
+    const ppx = ox + (P.x + 0.5) * cs, ppy = P.y < 0 ? oy - cs * 0.24 : oy + (P.y + 0.5) * cs;
+    ctx.fillStyle = K.soleil; ctx.strokeStyle = K.abysse; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(ppx, ppy, cs * 0.26, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  }
+};
+// maze input: keyboard, d-pad (hold to repeat), swipe to run
+const KEYMAP = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], z: [0, -1], s: [0, 1], a: [-1, 0], q: [-1, 0], d: [1, 0] };
+document.querySelectorAll("[data-dir]").forEach((b) => {
+  const [dx, dy] = b.dataset.dir.split(",").map(Number);
+  let t1 = 0, t2 = 0;
+  const stop = () => { clearTimeout(t1); clearInterval(t2); };
+  b.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    MOD.sentier.step(dx, dy);
+    t1 = setTimeout(() => { t2 = setInterval(() => MOD.sentier.step(dx, dy), 120); }, 300);
+  });
+  ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, stop));
+  b.addEventListener("click", (e) => { if (e.detail === 0) MOD.sentier.step(dx, dy); });
+});
+(() => {
+  const cv = $("maze");
+  cv.tabIndex = 0;
+  let sx = 0, sy = 0, down = false;
+  cv.addEventListener("pointerdown", (e) => { down = true; sx = e.clientX; sy = e.clientY; try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } });
+  cv.addEventListener("pointerup", (e) => {
+    if (!down) return; down = false;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+    if (Math.abs(dx) > Math.abs(dy)) MOD.sentier.run(Math.sign(dx), 0); else MOD.sentier.run(0, Math.sign(dy));
+  });
+  cv.addEventListener("pointercancel", () => { down = false; });
+})();
+$("sentierNext").addEventListener("click", () => go("fin"));
+
+/* ================= END ================= */
+MOD.fin = {
+  enter() {
+    setPrenomTexts();
+    const s = state.stats;
+    const secs = s.t0 ? Math.round((Date.now() - s.t0) / 1000) : 0;
+    $("stTime").textContent = s.t0 ? Math.floor(secs / 60) + " min " + String(secs % 60).padStart(2, "0") : "–";
+    $("stPeche").textContent = s.peche != null ? s.peche + " / 8" : "–";
+    $("stPhare").textContent = s.codes || "–";
+    $("stStorm").textContent = s.tempete || "–";
+    setTimeout(() => { if (state.screen === "fin") Fx.fin.start(); }, 120);
+  },
+  leave() { Fx.fin.kill(); }
+};
+$("finGo").addEventListener("click", () => {
+  if (!EMBED) { resetAll(); return; }
+  // the site listens for this message, closes the game and opens the guest's space
+  $("finGo").disabled = true;
+  const s = state.stats;
+  window.parent.postMessage({ type: "goeland:fini", duree: s.t0 ? Math.round((Date.now() - s.t0) / 1000) : null, tempetes: s.tempete || 0 }, "*");
+});
+
+/* ================= global keys ================= */
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches && e.target.matches("input, textarea, select")) return;
+  if (!$("glitch").hidden) return;
+  if (state.screen === "peche") {
+    if (e.key === "ArrowLeft") { e.preventDefault(); MOD.peche.decide(true); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); MOD.peche.decide(false); }
+  } else if (state.screen === "sudoku") {
+    if (/^[1-9]$/.test(e.key)) { e.preventDefault(); MOD.sudoku.put(e.key); }
+    else if (e.key === "Backspace" || e.key === "Delete" || e.key === "0") { e.preventDefault(); MOD.sudoku.put(""); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); MOD.sudoku.move(-1, 0); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); MOD.sudoku.move(1, 0); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); MOD.sudoku.move(0, -1); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); MOD.sudoku.move(0, 1); }
+  } else if (state.screen === "sentier") {
+    const k = KEYMAP[e.key] || KEYMAP[e.key && e.key.toLowerCase()];
+    if (!k) return;
+    e.preventDefault();
+    if (e.shiftKey) MOD.sentier.run(k[0], k[1]); else MOD.sentier.step(k[0], k[1]);
+  }
+});
+let resizeT = 0;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeT);
+  resizeT = setTimeout(() => {
+    if (state.screen === "sentier") MOD.sentier.size();
+    if (Fx.phare.on) Fx.phare.size();
+  }, 120);
+});
+
+/* ================= test bar ================= */
+function testbarSync() {
+  $("tbCode").textContent = state.lastCode;
+  $("tbPrenom").value = state.prenom;
+  $("tbMaze").value = state.mazeEnd;
+}
+function resetAll() {
+  state.lastCode = "3112"; state.mazeLoops = 0; state.mazeSentBack = false; state.oubli = false;
+  state.stats = { t0: 0, peche: null, codes: 0, tempete: 0 };
+  MOD.phare.sent = 0; MOD.phare.fails = 0; MOD.peche.fails = 0; MOD.tempete.fails = 0; MOD.tempete.tries = 0;
+  testbarSync();
+  go("intro");
+}
+document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => go(b.dataset.go)));
+$("tbMore").addEventListener("click", () => {
+  const p = $("tbPanel"); p.hidden = !p.hidden;
+  $("tbMore").setAttribute("aria-expanded", String(!p.hidden));
+  lsSet("goeland.tbOpen", p.hidden ? "0" : "1");
+});
+$("tbPrenom").addEventListener("input", () => {
+  state.prenom = $("tbPrenom").value.trim();
+  lsSet("goeland.prenom", state.prenom);
+  setPrenomTexts();
+  if (state.screen === "radome") MOD.radome.update();
+});
+$("tbMaze").addEventListener("change", () => { state.mazeEnd = $("tbMaze").value; lsSet("goeland.mazeEnd", state.mazeEnd); });
+$("tbReset").addEventListener("click", resetAll);
+
+/* ================= boot ================= */
+function start() {
+  $("testbar").hidden = !TEST;
+  $("finTest").hidden = EMBED;
+  if (TEST) {
+    if (!state.prenom) { const p = lsGet("goeland.prenom"); if (p) state.prenom = p; }
+    const m = lsGet("goeland.mazeEnd"); if (m === "sentier" || m === "debut") state.mazeEnd = m;
+    if (lsGet("goeland.tbOpen") === "1") { $("tbPanel").hidden = false; $("tbMore").setAttribute("aria-expanded", "true"); }
+  }
+  testbarSync();
+  setPrenomTexts();
+  go("intro");
+}
+start();
+})();
+</script>
+</body>
+</html>
