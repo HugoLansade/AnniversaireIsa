@@ -8,6 +8,9 @@ import * as F from "./firebase.js";
    CONFIGURATION
    ============================================================ */
 const CONFIG = {
+  // Opening of the site to guests (Paris time). Before it, the envelope only says "Bientôt disponible…".
+  // Keep the same moment in the Firestore rules (function ouvert()).
+  ouverture: "2026-10-11T00:00:00+02:00",
   reveillon: "2026-12-31T20:00:00+01:00",
   prixNuit: 30,
   sejourDu: "2026-12-30",      // first night at the gîte
@@ -645,9 +648,46 @@ const Enveloppe = (function () {
 })();
 
 /* ============================================================
+   OPENING — "Bientôt disponible…" until CONFIG.ouverture
+   Before that moment the envelope only says that the site opens soon: no address field, and nothing
+   is asked of the database. The Firestore rules refuse everything to anybody but the organizers until
+   the same moment (function ouvert() in the rules), so changing the date here alone opens nothing.
+   The organizers' door: add ?porte to the site address to show "Vous organisez ? Connexion organisateur"
+   under the envelope (sign-in link, as usual). An organizer already signed in on the device gets in
+   directly. From the opening on, all this switches off by itself.
+   ============================================================ */
+const Soon = {
+  actif: Date.now() < Date.parse(CONFIG.ouverture),
+  porte: /[?&]porte(=|&|$)/.test(location.search)
+};
+// "dimanche 11 octobre" (+ " à 9 h" when the opening is not at midnight), in Paris time
+function texteOuverture() {
+  const parts = {};
+  try {
+    new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long",
+      hour: "numeric", minute: "2-digit", hourCycle: "h23" })
+      .formatToParts(new Date(CONFIG.ouverture)).forEach((p) => { parts[p.type] = p.value; });
+  } catch (e) { return ""; }
+  if (!parts.weekday || !parts.day || !parts.month) return "";
+  const h = +parts.hour || 0, m = +parts.minute || 0;
+  return parts.weekday + " " + (parts.day === "1" ? "1er" : parts.day) + " " + parts.month
+    + (h || m ? " à " + h + " h" + (m ? String(m).padStart(2, "0") : "") : "");
+}
+// At the opening, a page left on "Bientôt disponible…" reloads by itself (a few seconds late: the server clock decides).
+function armerOuverture() {
+  if (!Soon.actif) return;
+  const ms = Date.parse(CONFIG.ouverture) - Date.now() + 5000;
+  if (ms > 2147483000) return;   // more than 24 days away: setTimeout cannot wait that long
+  setTimeout(() => {
+    Soon.actif = false;
+    if (S.phase !== "site") location.reload();
+  }, Math.max(0, ms));
+}
+
+/* ============================================================
    ENTRY — the envelope
    ============================================================ */
-const PANES = ["paneBoot", "paneMail", "paneAsk", "paneAskOk", "paneOrga", "paneSent", "paneConfirm", "paneFamille"];
+const PANES = ["paneBoot", "paneSoon", "paneMail", "paneAsk", "paneAskOk", "paneOrga", "paneSent", "paneConfirm", "paneFamille"];
 const FOCUS_OF = { paneMail: "mailInput", paneOrga: "orgaMail", paneConfirm: "confirmMail", paneAsk: "askName" };
 const Gate = { pane: "paneBoot", autoTimer: null };
 
@@ -661,7 +701,8 @@ Gate.show = function (pane, focus) {
   }
   const face = lettre ? "paneMail" : pane;
   PANES.forEach((id) => { if (id !== "paneFamille") $(id).hidden = id !== face; });
-  if (!lettre) $("entreeOrga").hidden = pane !== "paneMail";
+  // the organizer link: under the address field, or under "Bientôt disponible…" when the door is open (?porte)
+  if (!lettre) $("entreeOrga").hidden = !(pane === "paneMail" || (pane === "paneSoon" && Soon.porte));
   if (lettre) { renderPlaces(); Enveloppe.ouvrir(); } else Enveloppe.fermer();
   if (focus && FOCUS_OF[pane]) {
     setTimeout(() => { try { $(FOCUS_OF[pane]).focus({ preventScroll: true }); } catch (e) { /* nothing to do */ } }, 60);
@@ -680,6 +721,11 @@ function setPhase(p) {
 
 function montrerEntree(msg) {
   setPhase("entree");
+  if (Soon.actif) {   // before the opening: no address field, only "Bientôt disponible…"
+    Gate.show("paneSoon");
+    if (msg) setMsg($("soonMsg"), msg, true);   // like the address pane: a later call without a message keeps it
+    return;
+  }
   Gate.show("paneMail");
   if (msg) setMsg($("mailMsg"), msg, true);
 }
@@ -848,7 +894,9 @@ async function ouvrirSession(email, verifie) {
   if (!S.acces && !S.admin) {
     S.email = null;
     await fermerSession();
-    montrerEntree("Cette adresse n'est pas (ou plus) sur la liste des invités. Vérifiez l'orthographe, ou essayez l'adresse d'un proche.");
+    montrerEntree(Soon.actif
+      ? "Avant l'ouverture du site, seuls les organisateurs peuvent entrer."
+      : "Cette adresse n'est pas (ou plus) sur la liste des invités. Vérifiez l'orthographe, ou essayez l'adresse d'un proche.");
     $("mailInput").value = email;
     $("askMail").value = email;
     $("mailAsk").hidden = false;
@@ -1024,7 +1072,8 @@ function changerDePersonne() {
 /* Firebase auth state change (page opened, back on the tab…) */
 async function onAuth(user) {
   if (S.busy || S.attenteLien || S.email) return;
-  if (!user) { montrerEntree(); return; }
+  // Before the opening only an organizer's own sign-in opens the site: a guest's session is not even looked up.
+  if (!user || (Soon.actif && user.isAnonymous)) { montrerEntree(); return; }
   try {
     if (user.isAnonymous) {
       const s = await F.getDoc(ref("sessions", user.uid));
@@ -1380,7 +1429,7 @@ function peekNow() {
   card.addEventListener("animationend", done, { once: true });
   setTimeout(done, 2400);
   card.classList.add("peek");
-  peekLater(3000 + Math.random() * 2000);
+  peekLater(6500 + Math.random() * 5500);
 }
 function wirePeek() {
   const target = $("buffetCards");
@@ -2884,17 +2933,17 @@ function renderStoreState() {
 /* Wax seal: the outline ripples gently (the wax only, not the emblem).
    Settings taken from the "Wax Seal Motion" prototype. */
    (function sceauVivant() {
-    const S = {"amp":3,"cycle":4,"ripple":1,"swell":1.1,"seed":7,"smooth":true};
+    const S = {"amp":2.75,"cycle":5,"ripple":0.68,"swell":1.15,"seed":7,"smooth":true};
     const svg = document.querySelector(".env .seal");
     if (!svg) return;
     const env = svg.closest(".env");
     const cire = svg.querySelector("path");
     const grad = svg.querySelector("radialGradient");
-
+    // frozen gradient: the light stays put, only the outline moves
     grad.setAttribute("gradientUnits", "userSpaceOnUse");
     grad.setAttribute("cx", "0"); grad.setAttribute("cy", "0"); grad.setAttribute("r", "1");
     grad.setAttribute("gradientTransform", "matrix(48 0 0 47.25 23.14 18)");
-  
+
     const engine = (function sealEngine(d0, cx, cy) {
     const TAU = Math.PI * 2;
     const nums = d0.match(/-?\d*\.?\d+/g).map(Number);
@@ -2905,7 +2954,7 @@ function renderStoreState() {
       ux.push(dx / r); uy.push(dy / r); r0.push(r); th.push(Math.atan2(dy, dx));
     }
     let waves = [], norm = 1;
-
+    // slow standing waves around the edge: each lobe swells and recedes without rotating
     function raw(i, t) {
       let s = 0;
       for (const w of waves) s += w.a * Math.sin(w.k * th[i] + w.p) * Math.sin(w.w * t + w.q);
@@ -2949,7 +2998,7 @@ function renderStoreState() {
     return { configure, path };
   })(cire.getAttribute("d"), 32, 31);
     engine.configure(S.ripple, S.seed);
-  
+
     const calme = window.matchMedia("(prefers-reduced-motion: reduce)");
     let raf = 0, last = 0, drawn = 0, t = 0;
     function frame(now) {
@@ -2968,7 +3017,6 @@ function renderStoreState() {
     if (calme.addEventListener) calme.addEventListener("change", start);
     start();
   })();
-  
 
 /* ============================================================
    GLOBAL EVENTS
@@ -3026,6 +3074,7 @@ function wireGeneral() {
       case "to-mail":
         setMsg($("mailMsg"), "");
         $("mailAsk").hidden = true;
+        if (Soon.actif) { setMsg($("soonMsg"), ""); Gate.show("paneSoon"); break; }   // before the opening, back to "Bientôt disponible…"
         Gate.show("paneMail", true);
         break;
       default: break;
@@ -3064,6 +3113,9 @@ function boot() {
   wireOrga();
   wireGeneral();
   wirePeek();
+  const quand = texteOuverture();
+  if (quand) $("soonWhen").textContent = "Votre invitation s'ouvrira ici " + quand + ".";
+  armerOuverture();
   setPhase("boot");
   Gate.show("paneBoot");
 
