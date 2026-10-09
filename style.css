@@ -1383,6 +1383,10 @@
   .boot-dots i:nth-child(3){animation-delay:.3s}
   @keyframes dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-4px)}}
   .pane-boot .help{text-align:center}
+  /* before the opening: "Bientôt disponible…" */
+  .pane-soon{text-align:center;padding-bottom:.4rem}
+  .pane-soon .env-title{font-size:clamp(1.45rem,5.6vw,1.7rem);margin-bottom:.5rem}
+  .pane-soon .form-msg:empty{display:none}
 
   /* the letter: the place cards */
   .letter h2{font-size:clamp(1.4rem,5.4vw,1.75rem);letter-spacing:-.01em}
