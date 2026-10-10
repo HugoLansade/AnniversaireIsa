@@ -807,19 +807,20 @@ function marquerVu(pid) {
 
 /* ============================================================
    EASTER EGG — THE GOÉLAND SECURITY CHECK (goeland.html)
-   Six mini-games to pass before entering, for one guest only, once.
-   - No name is written here: the guest is recognized by a fingerprint of the
+   Six mini-games to pass before entering, for a few targeted guests only, once each.
+   - No name is written here: each guest is recognized by a fingerprint of the
      first name stored in Firebase (empreinte(norm(prenom)), see GOELAND.cibles).
    - Whatever address was used to come in (theirs or a relative's), anyone who
-     enters as this guest, switches to them, or opens their space from the family
-     strip gets the check, until it has been passed once. Only the organizers
-     (signed in with a link) are exempt.
+     enters as a targeted guest, switches to them, or opens their space from the family
+     strip gets the check, until it has been passed once for that guest. Only the
+     organizers (signed in with a link) are exempt.
    - "Passed" is the "goeland" stamp in Firestore: wiping the database resets the game.
    - To try it on any account, add ?goeland to the site address: the game then
      runs on every entry and nothing is saved.
    ============================================================ */
 const GOELAND = {
-  cibles: ["efa5a5"],   // empreinte(norm("<first name>")) of each targeted guest
+  // empreinte(norm("<first name>")) of each targeted guest: five guests, in the order they were added
+  cibles: ["efa5a5", "1wy0wzc", "1ubu9th", "1kvj4sq", "1074yy"],
   force: /[?&]goeland(=|&|$)/.test(location.search),
   enCours: false,
   fait: false
