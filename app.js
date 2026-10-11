@@ -356,7 +356,7 @@ const G = {
   vue: null,            // the space shown in "Mon espace"
   asOrga: false,        // space opened from the dashboard
   draft: null, draftFor: null, draftTouched: false,
-  dishCat: "sale", dishSoir: "31", editing: null, ideaRef: null,
+  dishCat: "sale", dishSoir: "31", editing: null, ideaRef: null,   // dishSoir: always "31", the only evening with a buffet
   memes: {}             // relatives ticked in "Les mêmes dates pour"
 };
 
@@ -1912,9 +1912,6 @@ function renderMyDishes(e) {
 function renderDishForm() {
   $("dishCats").innerHTML = CATS.filter((c) => c.id !== "autre").map((c) =>
     '<button type="button" data-act="dish-cat" data-v="' + c.id + '" aria-pressed="' + (G.dishCat === c.id) + '">' + c.icon + esc(c.un) + "</button>").join("");
-  $("dishSoir").querySelectorAll("button").forEach((b) => {
-    b.setAttribute("aria-pressed", String(b.getAttribute("data-v") === G.dishSoir));
-  });
   $("dishSubmit").textContent = G.editing ? "Enregistrer la modification" : "Ajouter au buffet";
   $("dishCancel").hidden = !G.editing;
   let free = freeIdeas(allItems()).filter((i) => i.cat === G.dishCat);
@@ -2005,7 +2002,7 @@ function startEdit(id) {
   G.editing = id;
   G.ideaRef = null;
   G.dishCat = CAT[it.type] && it.type !== "autre" ? it.type : "sale";
-  G.dishSoir = it.soir === "30" ? "30" : "31";
+  G.dishSoir = "31";   // dishes are for the réveillon of the 31st only (an old dish "for the 30th" moves to the 31st when saved)
   $("dishName").value = it.intitule || "";
   $("dishNote").value = it.note || "";
   setMsg($("dishMsg"), "");
@@ -2130,7 +2127,6 @@ function wireEspace() {
         renderEspace();
         break;
       case "dish-cat": G.dishCat = b.getAttribute("data-v"); G.ideaRef = null; renderDishForm(); checkDup(); break;
-      case "dish-soir": G.dishSoir = b.getAttribute("data-v"); renderDishForm(); break;
       case "pick-idea": {
         const idea = findIdea(b.getAttribute("data-idea"));
         if (idea) { $("dishName").value = idea.label; G.ideaRef = idea.ref; checkDup(); syncDishBtn(); try { $("dishName").focus(); } catch (err) { /* nothing to do */ } }
@@ -2439,8 +2435,13 @@ function famBlockHtml(f) {
   const payants = membres.filter((e) => montantOf(e) > 0);
   const regles = payants.filter((e) => e.regle).length;
   const prenoms = (ids) => (ids || []).map((id) => D.espaces[id] ? prenomDe(D.espaces[id]) : null).filter(Boolean).join(", ");
+  const autres = Object.values(D.familles).filter((o) => o.id !== f.id).sort(byNom);   // where a member can be moved to
   let conf = "";
-  if (Orga.confirm && Orga.confirm.fam === f.id && Orga.confirm.type !== "person") {
+  if (Orga.confirm && Orga.confirm.fam === f.id && Orga.confirm.type === "move") {
+    conf = D.espaces[Orga.confirm.id] ? '<div class="confirm-line">' + esc(texteDeplacement(planDeplacement(Orga.confirm.id, Orga.confirm.vers)))
+      + ' <button class="btn btn-or btn-sm" type="button" data-act="conf-yes">Déplacer</button>'
+      + '<button class="btn btn-ghost btn-sm" type="button" data-act="conf-no">Annuler</button></div>' : "";
+  } else if (Orga.confirm && Orga.confirm.fam === f.id && Orga.confirm.type !== "person") {
     conf = '<div class="confirm-line">'
       + (Orga.confirm.type === "mail" ? "Retirer l'adresse " + esc(Orga.confirm.id) + "&nbsp;? Elle n'ouvrira plus le site." : "Supprimer la famille " + esc(f.nom) + "&nbsp;?")
       + ' <button class="btn btn-or btn-sm" type="button" data-act="conf-yes">' + (Orga.confirm.type === "mail" ? "Retirer" : "Supprimer") + "</button>"
@@ -2472,6 +2473,15 @@ function famBlockHtml(f) {
     +       '<input type="text" maxlength="60" placeholder="Prénom et nom" aria-label="' + esc("Nouvelle personne dans la famille " + (f.nom || f.id)) + '">'
     +       '<button class="btn btn-ghost btn-sm" type="submit">Ajouter la personne</button>'
     +     "</form>"
+    +     (membres.length && autres.length
+          ? '<form data-form="move-person" data-fam="' + esc(f.id) + '" novalidate>'
+            + '<select aria-label="Personne à déplacer"><option value="">Déplacer…</option>'
+            +   membres.map((e) => '<option value="' + esc(e.id) + '">' + esc(e.nom) + "</option>").join("") + "</select>"
+            + '<select aria-label="Nouvelle famille"><option value="">vers la famille…</option>'
+            +   autres.map((o) => '<option value="' + esc(o.id) + '">' + esc(o.nom || o.id) + "</option>").join("") + "</select>"
+            + '<button class="btn btn-ghost btn-sm" type="submit">Déplacer</button>'
+            + "</form>"
+          : "")
     +   "</div>"
     +   (!membres.length && !mails.length ? '<p style="margin-top:.8rem"><button class="icon-btn danger" type="button" data-act="fam-del" data-fam="' + esc(f.id) + '">Supprimer la famille</button></p>' : "")
     + "</div></details>";
@@ -2488,6 +2498,51 @@ function renderFamilles() {
   $("orgaFamilles").innerHTML = fams.length
     ? fams.map(famBlockHtml).join("")
     : '<div class="tl-empty">Aucune famille pour l\'instant. Importez le fichier préparé (rubrique Données), ou créez une famille ci-dessous.</div>';
+}
+
+/* Moving a person to another family (splitting a family, for instance). Their space keeps everything
+   (dates, payment, Goéland badge…); their dishes and ideas follow them, and so does every address that,
+   once the move is done, only serves people of the new family. An address shared with somebody who stays
+   behind keeps opening the old family until that person is moved too. */
+function planDeplacement(pid, vers) {
+  const e = D.espaces[pid], de = e.famille;
+  const restent = (ids) => (ids || []).filter((id) => id !== pid && D.espaces[id] && D.espaces[id].famille === de);
+  const mails = Object.values(D.acces).filter((a) => a.famille === de && (a.personnes || []).indexOf(pid) !== -1)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const suivent = mails.filter((a) => !restent(a.personnes).length);
+  return {
+    e: e, de: de, vers: vers, suivent: suivent,
+    partagees: mails.filter((a) => restent(a.personnes).length),
+    apports: Object.values(D.apports).filter((a) => a.espace === pid),
+    idees: Object.values(D.idees).filter((d) => d.espace === pid),
+    accesVers: Object.values(D.acces).filter((a) => a.famille === vers).length + suivent.length
+  };
+}
+function texteDeplacement(p) {
+  const prenoms = (ids) => listeNoms((ids || []).filter((id) => id !== p.e.id && D.espaces[id]).map((id) => prenomDe(D.espaces[id])));
+  const n = p.apports.length, k = p.idees.length, sp = " ";
+  const suit = ["ses dates"];
+  if (n) suit.push(n === 1 ? "son plat ou apport" : "ses " + n + " plats ou apports");
+  if (k) suit.push(k === 1 ? "son idée" : "ses " + k + " idées");
+  const quoi = listeNoms(suit);
+  let t = "Déplacer " + p.e.nom + " vers la famille " + nomFamille(p.vers) + sp + "? " + quoi.charAt(0).toUpperCase() + quoi.slice(1) + " suivent.";
+  if (p.suivent.length === 1) t += " L'adresse " + p.suivent[0].id + " suit aussi.";
+  else if (p.suivent.length) t += " Les adresses " + listeNoms(p.suivent.map((a) => a.id)) + " suivent aussi.";
+  p.partagees.forEach((a) => {
+    t += " L'adresse " + a.id + " sert aussi à " + prenoms(a.personnes) + sp + ": elle reste avec la famille " + nomFamille(p.de)
+      + " et suivra quand " + prenoms(a.personnes) + " sera déplacé·e aussi.";
+  });
+  if (!p.accesVers) t += " Attention" + sp + ": la famille " + nomFamille(p.vers) + " n'aura encore aucune adresse, personne ne pourra y entrer" + sp + ": ajoutez-en une.";
+  return t;
+}
+function demanderDeplacement(form) {
+  const sels = form.querySelectorAll("select");
+  const pid = sels[0].value, vers = sels[1].value;
+  if (!pid || !D.espaces[pid]) { toast("Choisissez la personne à déplacer"); sels[0].focus(); return; }
+  if (!vers || !D.familles[vers]) { toast("Choisissez sa nouvelle famille"); sels[1].focus(); return; }
+  Orga.confirm = { type: "move", id: pid, fam: form.getAttribute("data-fam"), vers: vers };
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();   // the list waits while a field has the focus
+  renderFamilles();
 }
 
 function idLibre(base, pris) {
@@ -2519,6 +2574,16 @@ async function confirmer() {
     } else if (c.type === "fam") {
       await del("familles", c.fam);
       toast("Famille supprimée");
+    } else if (c.type === "move" && D.espaces[c.id]) {
+      const p = planDeplacement(c.id, c.vers), now = nowIso();
+      const b = F.writeBatch(db);
+      b.update(ref("espaces", c.id), { famille: c.vers, maj: now });
+      p.apports.forEach((a) => b.update(ref("apports", a.id), { famille: c.vers, maj: now }));
+      p.idees.forEach((d) => b.update(ref("idees", d.id), { famille: c.vers }));
+      p.suivent.forEach((a) => b.update(ref("acces", a.id), { famille: c.vers }));
+      await b.commit();
+      Orga.open[c.vers] = true;
+      toast(p.e.nom + " est maintenant dans la famille " + nomFamille(c.vers));
     }
   } catch (err) { toast(errText(err)); }
   Orga.render();
@@ -2767,6 +2832,7 @@ function wireOrga() {
     const kind = form.getAttribute("data-form");
     if (kind === "add-mail") ajouterAdresse(form);
     if (kind === "add-person") ajouterPersonne(form);
+    if (kind === "move-person") demanderDeplacement(form);
     if (kind === "dem-add") traiterDemande(form);
   });
   sec.addEventListener("toggle", (ev) => {
