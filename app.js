@@ -819,8 +819,8 @@ function marquerVu(pid) {
      runs on every entry and nothing is saved.
    ============================================================ */
 const GOELAND = {
-  // empreinte(norm("<first name>")) of each targeted guest: five guests, in the order they were added
-  cibles: ["efa5a5", "1wy0wzc", "1ubu9th", "1kvj4sq", "1074yy"],
+  // empreinte(norm("<first name>")) of each targeted guest: 4 guests, in the order they were added
+  cibles: ["1wy0wzc", "1ubu9th", "1kvj4sq", "1074yy"],
   force: /[?&]goeland(=|&|$)/.test(location.search),
   enCours: false,
   fait: false
